@@ -31,7 +31,7 @@
         Follower follower;
         boolean rampUp = false;
         double targetVelocity;
-        int target = 10;
+        int target = 10; // sugi pula ioane 
         int greenPos = -1;
         double distance = 0, error;
         boolean turretOn = false;
