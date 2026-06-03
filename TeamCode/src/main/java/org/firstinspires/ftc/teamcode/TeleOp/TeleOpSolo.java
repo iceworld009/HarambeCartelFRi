@@ -32,7 +32,11 @@
         Follower follower;
         boolean rampUp = false;
         double targetVelocity;
+<<<<<<< HEAD
         int target = 10;
+=======
+        int target = 10; // sugi pula ioane 2
+>>>>>>> 3209ca84566750ba68bc949527d8cf53e760fc6e
         int greenPos = -1;
         double distance = 0, error;
         boolean turretOn = false;
