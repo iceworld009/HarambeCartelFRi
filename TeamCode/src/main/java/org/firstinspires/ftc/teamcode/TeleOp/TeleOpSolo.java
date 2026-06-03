@@ -4,6 +4,7 @@
     import com.bylazar.telemetry.TelemetryManager;
     import com.pedropathing.follower.Follower;
     import com.pedropathing.geometry.Pose;
+    import com.qualcomm.hardware.limelightvision.LLResult;
     import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
     import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
     import com.qualcomm.robotcore.hardware.DcMotorSimple;
@@ -31,7 +32,7 @@
         Follower follower;
         boolean rampUp = false;
         double targetVelocity;
-        int target = 10; // sugi pula ioane 
+        int target = 10;
         int greenPos = -1;
         double distance = 0, error;
         boolean turretOn = false;
@@ -43,9 +44,11 @@
         ElapsedTime time = new ElapsedTime();
         ElapsedTime check = new ElapsedTime();
         private TelemetryManager telemetryM;
+        Thread updateTurret = null;
         @Override
         public void runOpMode()  {
 
+            // Get Instances
             follower = Constants.createFollower(hardwareMap);
             follower.setStartingPose(new Pose(PoseStorage.autoPose.getX()-72, PoseStorage.autoPose.getY()-72,PoseStorage.autoPose.getPose().getHeading()));
             telemetryM = PanelsTelemetry.INSTANCE.getTelemetry();
@@ -59,17 +62,21 @@
             hardwareClass.FL.setDirection(DcMotorSimple.Direction.REVERSE);
             hardwareClass.BL.setDirection(DcMotorSimple.Direction.REVERSE);
             selectioner.checkColors();
-            telemetry.clear();
-            telemetry.addData("ResultTop:",selectioner.resultTop);
-            telemetry.addData("ResultLeft:",selectioner.resultBotL);
-            telemetry.addData("ResultRight:",selectioner.resultBotR);
-            telemetry.addLine("Ready");
-            telemetry.update();
 
+
+            //Inital setup 1/2
             limelight.setup();
             limelight.start();
+            telemetry.addLine("Ready");
+            telemetry.addLine("Press START");
+            telemetry.clear();
+            telemetry.update();
+
 
             waitForStart();
+
+
+            //Inital setup 2/2
             selectioner.resetServos();
             if(!turret.getStatus()){
                 turret.setup();
@@ -82,17 +89,17 @@
             resetTurret();
             target = 10;
             selectioner.hoodMove(2);
-            updateTelemetry();
-
+            startUpdate();
             while(opModeIsActive()) {
 
 
-                updatePosition();
+                if(updateTurret == null)
+                    updatePosition();
                 distance = limelight.getDistanceOD(x, y,target);
                 error = motors.getRampError(targetVelocity);
                 targetVelocity = getRPM(distance);
 
-                if(check.milliseconds()>60){
+                if(check.milliseconds()>150){
                     updateTelemetry();
                     check.reset();
                 }
@@ -105,9 +112,6 @@
                     motors.setRampVelocityC(700);
                 }
 
-                if(target == 0 || target == 1 || target == 10) {
-                    updateTurretFusion();
-                }
 
                 if(error>-40) {
                     selectioner.shootOnAT(greenOffset);
@@ -147,30 +151,25 @@
                     rampUp = true;
                     turretOn = true;
                     greenOffset = -1;
-                    gamepad1.rumble(300);
-                    motors.setRampVelocityC((int)targetVelocity+250);
-                    sleep(200);
+                    motors.setRampVelocityC((int)targetVelocity);
                 }
 
                 if (gamepad1.dpad_left) {
                     rampUp = true;
                     turretOn = true;
                     greenOffset = 0;
-                    gamepad1.rumble(300);
                 }
 
                 if (gamepad1.dpad_down) {
                     rampUp = true;
                     turretOn = true;
                     greenOffset = 2;
-                    gamepad1.rumble(300);
                 }
 
                 if (gamepad1.dpad_right) {
                     rampUp = true;
                     turretOn = true;
                     greenOffset = 1;
-                    gamepad1.rumble(300);
                 }
 
                 if (gamepad1.left_bumper) {
@@ -185,7 +184,6 @@
 
                 if(gamepad1.y) {
                     selectioner.unloadBalls();
-                    gamepad2.rumble(300);
                 }
 
                 if(gamepad1.dpad_up){
@@ -198,10 +196,6 @@
 
                 if(gamepad1.b)
                     follower.setPose(PoseStorage.redPose);
-
-                telemetryM.addData("RPM",motors.getVelocity());
-                telemetryM.addData("TargetVelocity",targetVelocity);
-                telemetryM.update();
             }
         }
 
@@ -225,17 +219,31 @@
             }
         }
 
+
+
+        public void startUpdate() {
+            boolean running = true;
+            if (updateTurret == null || !updateTurret.isAlive()) {
+                updateTurret = new Thread(() -> {
+                    while (running) {
+                        updatePosition();
+                        if(target == 0 || target == 1 || target == 10) {
+                            updateTurretFusion();
+                        }
+                    }
+                });
+                updateTurret.start();
+            }
+        }
         void updateTurretFusion() {
 
             double dx = 0, dy = 0;
 
             if(target == 1) {
-                limelight.setPipeline(0);
                 dx = HardwareClass.blueScoreX - x;
                 dy = HardwareClass.blueScoreY - y;
             }
             else if(target == 0) {
-                limelight.setPipeline(4);
                 dx = HardwareClass.redScoreX - x;
                 dy = HardwareClass.redScoreY - y;
             }
@@ -260,29 +268,11 @@
             double relativeAngle = goalAngle - robotHeading;
             relativeAngle = Math.atan2(Math.sin(relativeAngle), Math.cos(relativeAngle));
 
-            double basePosition = convertToNewRange(
+            double finalPosition = convertToNewRange(
                     relativeAngle,
                     -2 * Math.PI / 3, 2 * Math.PI / 3,
                     HardwareClass.turret_min, HardwareClass.turret_max
             );
-
-            double distance = Math.hypot(dx, dy);
-
-            if(limelight.checkResults()) {
-
-                double tx = limelight.getXPos();
-                tx = Math.max(-20, Math.min(20, tx));
-                double gain = 0.40 + (distance / 500.0);
-
-                if(Math.abs(tx) > 0.7) {
-                    visionOffset -= tx * gain;
-                }
-            }
-            else {
-                visionOffset *= 0.8;
-            }
-
-            double finalPosition = basePosition + visionOffset;
 
             finalPosition = Math.max(
                     HardwareClass.turret_min+10,
@@ -291,65 +281,7 @@
             targetPosition = finalPosition;
             turret.goToPosition(finalPosition);
         }
-        void updateTurretFusionOld() {     //Odometrie instant + corectie limelight
 
-            double dx=0,dy=0;
-
-            if(target == 1) { //cos albastru
-                limelight.setPipeline(0);
-                dx = HardwareClass.blueScoreX - x;
-                dy = HardwareClass.blueScoreY - y;
-            }
-            else
-            if(target == 0) { // cos rosu
-                limelight.setPipeline(4);
-                dx = HardwareClass.redScoreX - x;
-                dy = HardwareClass.redScoreY - y;
-            }
-
-                else if (target == 10) { // Cauta apriltag
-                if (greenPos == -1) {
-                    greenPos = limelight.checkApriltagResults();
-                }
-
-                if (greenPos > 0 && greenPos < 4) {
-                    target = 0;
-                    limelight.setPipeline(4);
-                    selectioner.setTagPos(greenPos);
-                }
-
-                dx = HardwareClass.tagPosX - x;
-                dy = HardwareClass.tagPosY - y;
-            }
-
-
-            double goalAngle = Math.atan2(dy, dx);
-            double thetaR = BotPose.getHeading();
-
-            targetAngle = goalAngle - thetaR;
-            targetAngle = Math.atan2(Math.sin(targetAngle), Math.cos(targetAngle));
-
-            targetPosition = convertToNewRange(
-                    targetAngle,
-                    -2*Math.PI/3, 2*Math.PI/3,
-                    HardwareClass.turret_min, HardwareClass.turret_max
-            );
-
-            if (limelight.checkResults()) {
-                double tx = limelight.getXPos();
-                tx = Math.max(-15, Math.min(15, tx));
-                if(Math.abs(tx)>3)
-                    visionOffset -= tx * 0.4;
-            } else {
-                visionOffset *= 0.75;
-            }
-            targetPosition += visionOffset;
-
-            targetPosition = Math.min(Math.max(targetPosition,HardwareClass.turret_min),HardwareClass.turret_max);
-            adjust = targetPosition;
-            targetPosition= Math.max(HardwareClass.turret_min, Math.min(HardwareClass.turret_max, targetPosition));
-            turret.goToPosition(targetPosition);
-        }
 
         void updateTurretPredictive() {
             Pose pose = follower.getPose();

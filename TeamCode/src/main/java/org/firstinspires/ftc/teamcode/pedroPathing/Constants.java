@@ -74,8 +74,8 @@ public class Constants {
             .yVelocity(61);
 
     public static PinpointConstants localizerConstants = new PinpointConstants()
-            .forwardPodY(-6.67)//-6.920p
-            .strafePodX(1.06)
+            .forwardPodY(-6.65)//-6.920p
+            .strafePodX(0.94) //camo unchie jumate Pecican
             .distanceUnit(DistanceUnit.INCH)
             .hardwareMapName("pinpoint")
             .encoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD)

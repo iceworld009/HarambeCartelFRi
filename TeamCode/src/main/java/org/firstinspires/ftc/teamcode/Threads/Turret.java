@@ -16,7 +16,7 @@ public class Turret {
 
     Telemetry telemetry = null;
 
-    public static double kp = 0.0048, ki = 0, kd = 0.0001;
+    public static double kp = 0.0072, ki = 0, kd = 0.00001; //prima data bai p si apoi pula ;)
     public static double target = 100;
     TurretPID generalPID = null;
     HardwareClass hardwareClass = null;
