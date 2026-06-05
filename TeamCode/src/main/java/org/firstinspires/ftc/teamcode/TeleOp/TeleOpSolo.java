@@ -8,6 +8,7 @@ import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.HardwareClass;
@@ -43,11 +44,11 @@ public class TeleOpSolo extends LinearOpMode {
     Pose BotPose;
     ElapsedTime time = new ElapsedTime();
     ElapsedTime check = new ElapsedTime();
+    ElapsedTime shootTimer = new ElapsedTime();
     private TelemetryManager telemetryM;
     Thread updateTurret = null;
     @Override
     public void runOpMode()  {
-
         // Get Instances
         follower = Constants.createFollower(hardwareMap);
         follower.setStartingPose(new Pose(PoseStorage.autoPose.getX()-72, PoseStorage.autoPose.getY()-72,PoseStorage.autoPose.getPose().getHeading()));
@@ -62,16 +63,15 @@ public class TeleOpSolo extends LinearOpMode {
         hardwareClass.FL.setDirection(DcMotorSimple.Direction.REVERSE);
         hardwareClass.BL.setDirection(DcMotorSimple.Direction.REVERSE);
         selectioner.checkColors();
-
+        motors.setRampCoefs(hardwareMap.voltageSensor.iterator().next().getVoltage());
 
         //Inital setup 1/2
         limelight.setup();
         limelight.start();
+        telemetry.clear();
         telemetry.addLine("Ready");
         telemetry.addLine("Press START");
-        telemetry.clear();
         telemetry.update();
-
 
         waitForStart();
 
@@ -88,11 +88,11 @@ public class TeleOpSolo extends LinearOpMode {
         }
         resetTurret();
         target = 10;
-        selectioner.hoodMove(2);
+
         startUpdate();
         while(opModeIsActive()) {
 
-
+            selectioner.hoodMove((int)getHood(distance));
             if(updateTurret == null)
                 updatePosition();
             distance = limelight.getDistanceOD(x, y,target);
@@ -108,12 +108,11 @@ public class TeleOpSolo extends LinearOpMode {
             {
                 motors.setRampVelocityC((int)targetVelocity);
             }
-            else if(motors.getVelocity()<700 && turretOn && !rampUp && selectioner.ballsfull) {
-                motors.setRampVelocityC(700);
+            else if(motors.getVelocity()<1500 && turretOn && selectioner.ballsfull) {
+                motors.setRampVelocityC(1500);
             }
 
-
-            if(error>-40) {
+            if(error>-60 || (shootTimer.seconds()>1.5&& rampUp)) {
                 selectioner.shootOnAT(greenOffset);
                 motors.rampStop();
                 rampUp = false;
@@ -151,25 +150,10 @@ public class TeleOpSolo extends LinearOpMode {
                 rampUp = true;
                 turretOn = true;
                 greenOffset = -1;
+                motors.setRampVelocityC((int)targetVelocity+200);
+                sleep(50);
                 motors.setRampVelocityC((int)targetVelocity);
-            }
-
-            if (gamepad1.dpad_left) {
-                rampUp = true;
-                turretOn = true;
-                greenOffset = 0;
-            }
-
-            if (gamepad1.dpad_down) {
-                rampUp = true;
-                turretOn = true;
-                greenOffset = 2;
-            }
-
-            if (gamepad1.dpad_right) {
-                rampUp = true;
-                turretOn = true;
-                greenOffset = 1;
+                shootTimer.reset();
             }
 
             if (gamepad1.left_bumper) {
@@ -200,7 +184,8 @@ public class TeleOpSolo extends LinearOpMode {
     }
 
     int getRPM(double d) {
-        double r = -0.0023 * Math.pow(d, 2) + 2.77 * d + 2150;
+        double r = -0.0023 * Math.pow(d, 2) + 2.77 * d + 2200;
+        if(d>270) r+=300;
         return (int) Math.max(1000, Math.min(r, 4000));
     }
 
@@ -230,6 +215,7 @@ public class TeleOpSolo extends LinearOpMode {
                     if(target == 0 || target == 1 || target == 10) {
                         updateTurretFusion();
                     }
+                    sleep(10); // foloseste prea mult cpu !!!
                 }
             });
             updateTurret.start();
@@ -380,6 +366,8 @@ public class TeleOpSolo extends LinearOpMode {
         telemetry.addData("ResultLeft:",selectioner.resultBotL);
         telemetry.addData("ResultRight:",selectioner.resultBotR);
         telemetry.addData("GreenPos:",this.greenPos);
+        telemetryM.addData("Velocity", motors.getVelocity());
+        telemetryM.update();
         telemetry.update();
     }
 }

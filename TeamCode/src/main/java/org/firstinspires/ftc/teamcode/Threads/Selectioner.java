@@ -47,7 +47,6 @@ public class Selectioner{
     }
 
     public void shootOnAT(int dec) {
-        hoodMove(14);
         checkColors();
 
         if(dec<0 && greenPos < 0) {
@@ -60,10 +59,8 @@ public class Selectioner{
         if(currentGreen>3)currentGreen-=3;
         if (currentGreen == 1) shootGreen(); else shootPurple();
         sleep(delay);
-        hoodMove(7);
         if (currentGreen == 2) shootGreen(); else shootPurple();
         sleep(delay);
-        hoodMove(2);
         if (currentGreen == 3) shootGreen(); else shootPurple();
         sleep(delay);
 
