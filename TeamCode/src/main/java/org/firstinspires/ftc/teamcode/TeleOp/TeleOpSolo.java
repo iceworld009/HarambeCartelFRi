@@ -75,23 +75,21 @@ public class TeleOpSolo extends LinearOpMode {
 
         waitForStart();
 
-
         //Inital setup 2/2
-        selectioner.resetServos();
+
         if(!turret.getStatus()){
             turret.setup();
         }
-        motors.setRampCoefs();
-        turret.resetMotor();
         if(!holonomic.getStatus()){
             holonomic.start();
         }
+        selectioner.resetServos();
+        turret.resetMotor();
         resetTurret();
         target = 10;
 
         startUpdate();
         while(opModeIsActive()) {
-
             selectioner.hoodMove((int)getHood(distance));
             if(updateTurret == null)
                 updatePosition();
@@ -99,8 +97,8 @@ public class TeleOpSolo extends LinearOpMode {
             error = motors.getRampError(targetVelocity);
             targetVelocity = getRPM(distance);
 
-            if(check.milliseconds()>150){
-                updateTelemetry();
+            if(check.milliseconds()>1500){
+                selectioner.checkColors();
                 check.reset();
             }
 
@@ -145,7 +143,6 @@ public class TeleOpSolo extends LinearOpMode {
             }
             else
                 motors.intakeOff();
-
             if (gamepad1.right_bumper) {
                 rampUp = true;
                 turretOn = true;
@@ -345,29 +342,14 @@ public class TeleOpSolo extends LinearOpMode {
     }
 
     void updateTelemetry(){
-        selectioner.checkColors();
+
         telemetry.clearAll();
-        telemetry.addData("x:" , x);
-        telemetry.addData("y:" , y);
+        telemetry.addData("x" , x);
+        telemetry.addData("y" , y);
         telemetry.addData("Distance: " , distance);
-        telemetry.addData("Velocity:",motors.getVelocity());
-        telemetry.addData("Turret error:",getTurretError());
-        telemetry.addData("Velocity error:",error);
-        if(target == 0){
-            telemetry.addLine("Target: RED");
-        }
-        else if(target == 1) {
-            telemetry.addLine("Target: BLUE");
-        }
-        else if(target == 10){
-            telemetry.addLine("Target: AprilTag");
-        }
-        telemetry.addData("ResultTop:",selectioner.resultTop);
-        telemetry.addData("ResultLeft:",selectioner.resultBotL);
-        telemetry.addData("ResultRight:",selectioner.resultBotR);
-        telemetry.addData("GreenPos:",this.greenPos);
-        telemetryM.addData("Velocity", motors.getVelocity());
-        telemetryM.update();
+        telemetry.addData("Velocity",motors.getVelocity());
+        telemetry.addData("Turret error",getTurretError());
+        telemetry.addData("Velocity error",error);
         telemetry.update();
     }
 }

@@ -35,8 +35,8 @@ public class HardwareClass {
     public static double blueScoreX = -71, blueScoreY = -70;
     public static double tagPosX = -72, tagPosY = 0;
 
-    public static double selectTopLOW = 0.89, selectBotLLOW = 0.13,selectBotRLOW =0.87;
-    public static double selectTopHIGH = 0.48, selectBotLHIGH = 0.6,selectBotRHIGH = 0.45;
+    public static double selectTopLOW = 0.89, selectBotLLOW = 0.14,selectBotRLOW =0.89;
+    public static double selectTopHIGH = 0.48, selectBotLHIGH = 0.6,selectBotRHIGH = 0.5;
     public static int bratDelay = 135; // 110
     public static int bratBetween = 65; // 65
     public static int turret_min=-715, turret_max=0;
