@@ -47,7 +47,6 @@ public class Selectioner{
     }
 
     public void shootOnAT(int dec) {
-        checkColors();
 
         if(dec<0 && greenPos < 0) {
             unloadBalls();

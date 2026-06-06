@@ -30,16 +30,16 @@ import org.firstinspires.ftc.teamcode.pedroPathing.PoseStorage;
 @Autonomous(name = "Auto Close Blue " , group = "Test")
 public class AutoCloseBlue extends OpMode {
     int target=0;
-    private final Pose startPose = new Pose(14.8, 25.3, Math.toRadians(230.5)); // Start Pose of our robot.
-    private final Pose scorePose = new Pose(46.1, 45  ,Math.toRadians(225)); // Scoring Pose of our robot. It is facing the goal at a 135 degree angle.
-    private final Pose scorePose1 = new Pose(64,49,Math.toRadians(270)); // scorePose 1 doar cu turreta
-    private final Pose pickup1_3Pose = new Pose(63.1, 24.5, Math.toRadians(270)); // Highest (First Set) of Artifacts from the Spike Mark.
-    private final Pose pickup2Pose = new Pose(78, 49   , Math.toRadians(270)); // Middle (Second Set) of Artifacts from the Spike Mark.
-    private final Pose aux_2 = new Pose(82, 36   , Math.toRadians(270)); // Middle (Second Set) of Artifacts from the Spike Mark.
-    private final Pose pickup2_3Pose = new Pose(85.5,18,Math.toRadians(270));
-    private final Pose parkPose = new Pose(40.7, 51, Math.toRadians(215)); // Park // Park
-    private final Pose unloadPose = new Pose(82.8,11,Math.toRadians(248));
-    private final Pose unloadPose2 = new Pose(83.1,11,Math.toRadians(245));
+    private final Pose startPose = new Pose(14.8, 25.3, Math.toRadians(230.5));
+    private final Pose scorePose = new Pose(55, 49  ,Math.toRadians(225));
+    private final Pose scorePose1 = new Pose(65,49,Math.toRadians(270));
+    private final Pose pickup1_3Pose = new Pose(63.1, 24.5, Math.toRadians(270));
+    private final Pose pickup2Pose = new Pose(78, 49   , Math.toRadians(270));
+    private final Pose aux_2 = new Pose(82, 36   , Math.toRadians(270));
+    private final Pose pickup2_3Pose = new Pose(85.5,18.8,Math.toRadians(270));
+    private final Pose parkPose = new Pose(44, 51, Math.toRadians(215));
+    private final Pose unloadPose = new Pose(84,11.5,Math.toRadians(248));
+    private final Pose unloadPose2 = new Pose(84.5,12,Math.toRadians(247));
     private final Pose aux = new Pose (82 , 36  , Math.toRadians(245));
     DcMotor FR , FL , BR , BL;
     double shoots = 0;
@@ -73,7 +73,7 @@ public class AutoCloseBlue extends OpMode {
     double x,y;
     Pose BotPose;
 
-    double error, targetVelocity = 2450;
+    double error, targetVelocity = 2720;
 
     ElapsedTime unload_timer = new ElapsedTime();
 
@@ -202,8 +202,8 @@ public class AutoCloseBlue extends OpMode {
                 .build();
 
         ScoreFromRack3 = follower.pathBuilder()
-                .addPath(new BezierLine(unloadPose2, parkPose))
-                .setLinearHeadingInterpolation(unloadPose2.getHeading(), parkPose.getHeading())
+                .addPath(new BezierLine(unloadPose2, scorePose1))
+                .setLinearHeadingInterpolation(unloadPose2.getHeading(), scorePose1.getHeading())
                 .addParametricCallback(0,() -> {
                     motors.intakeReverse();
                     startPresiune();
@@ -238,7 +238,7 @@ public class AutoCloseBlue extends OpMode {
                     motors.intakeOn();
                     for(int i = 0; i < REP ; i++){
                         errorTelemetry();
-                        if(motors.getRampError(targetVelocity)>-110){
+                        if(motors.getRampError(targetVelocity)>-60){
                             break;
                         }
                     }
@@ -259,7 +259,7 @@ public class AutoCloseBlue extends OpMode {
                     motors.intakeOn();
                     for(int i = 0; i < REP ; i++){
                         errorTelemetry();
-                        if(motors.getRampError(targetVelocity)>-80){
+                        if(motors.getRampError(targetVelocity)>-60){
                             break;
                         }
                     }
@@ -277,8 +277,8 @@ public class AutoCloseBlue extends OpMode {
 
             case 5:
                 if(!follower.isBusy()) {
-                    if(unload_timer.milliseconds() > 2300){
-                        sleep(1200);
+                    if(unload_timer.milliseconds() > 1000){
+                        sleep(300);
                         setPathState(7);
                     }
                 }
@@ -296,7 +296,7 @@ public class AutoCloseBlue extends OpMode {
                     motors.intakeOn();
                     for(int i = 0; i < REP ; i++){
                         errorTelemetry();
-                        if(motors.getRampError(targetVelocity)>-80){
+                        if(motors.getRampError(targetVelocity)>-60){
                             break;
                         }
                     }
@@ -319,7 +319,7 @@ public class AutoCloseBlue extends OpMode {
                     motors.intakeOn();
                     for(int i = 0; i < REP ; i++){
                         errorTelemetry();
-                        if(motors.getRampError(targetVelocity)>-80){
+                        if(motors.getRampError(targetVelocity)>-60){
                             break;
                         }
                     }
@@ -337,7 +337,7 @@ public class AutoCloseBlue extends OpMode {
                 break;
             case 12:
                 if(!follower.isBusy()) {
-                    if(unload_timer.milliseconds() > 2500){
+                    if(unload_timer.milliseconds() > 1600){
                         setPathState(14);
                     }
                 }
@@ -354,7 +354,7 @@ public class AutoCloseBlue extends OpMode {
                     motors.intakeOn();
                     for(int i = 0; i < REP ; i++){
                         errorTelemetry();
-                        if(motors.getRampError(targetVelocity)>-80){
+                        if(motors.getRampError(targetVelocity)>-60){
                             break;
                         }
                     }
@@ -371,7 +371,7 @@ public class AutoCloseBlue extends OpMode {
                 break;
             case 17:
                 if(!follower.isBusy()) {
-                    if(unload_timer.milliseconds() > 1150){
+                    if(unload_timer.milliseconds() > 900){
                         setPathState(18);
                     }
                 }
@@ -388,7 +388,7 @@ public class AutoCloseBlue extends OpMode {
                     motors.intakeOn();
                     for(int i = 0; i < REP && opmodeTimer.getElapsedTimeSeconds() < 29.1; i++){
                         errorTelemetry();
-                        if(motors.getRampError(targetVelocity)>-65){
+                        if(motors.getRampError(targetVelocity)>-40){
                             break;
                         }
                     }
@@ -582,15 +582,6 @@ public class AutoCloseBlue extends OpMode {
                 -2*Math.PI/3, 2*Math.PI/3,
                 HardwareClass.turret_min, HardwareClass.turret_max
         );
-
-        if (limelight.checkResults()) {
-            double tx = limelight.getXPos();
-            if(Math.abs(tx)>1.2)
-                visionOffset -= tx * 0.20;
-        } else {
-            visionOffset *= 0.8;
-        }
-        targetPosition += visionOffset;
 
         targetPosition = Math.min(Math.max(targetPosition,HardwareClass.turret_min),HardwareClass.turret_max);
         turret.goToPosition(targetPosition);

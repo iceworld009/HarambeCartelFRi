@@ -29,7 +29,7 @@ public class HardwareClass {
     public static double redX = -71, redY = 70;
     public static double redScoreX = -71, redScoreY = 70;
     public static double autoRedScorePoseX = 4, autoRedScorePoseY = 139;
-    public static double autoBlueScorePoseX= 4, autoBlueScorePoseY = 5;
+    public static double autoBlueScorePoseX= 8, autoBlueScorePoseY = 2;
 
     public static double blueX = -71, blueY = -70;
     public static double blueScoreX = -71, blueScoreY = -70;

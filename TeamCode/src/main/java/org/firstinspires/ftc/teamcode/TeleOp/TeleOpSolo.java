@@ -4,11 +4,9 @@ import com.bylazar.telemetry.PanelsTelemetry;
 import com.bylazar.telemetry.TelemetryManager;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.Pose;
-import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.HardwareClass;
@@ -90,16 +88,19 @@ public class TeleOpSolo extends LinearOpMode {
 
         startUpdate();
         while(opModeIsActive()) {
-            selectioner.hoodMove((int)getHood(distance));
-            if(updateTurret == null)
+            selectioner.hoodMove((int) getHood(distance));
+            if (updateTurret == null)
                 updatePosition();
-            distance = limelight.getDistanceOD(x, y,target);
+            distance = limelight.getDistanceOD(x, y, target);
             error = motors.getRampError(targetVelocity);
             targetVelocity = getRPM(distance);
 
-            if(check.milliseconds()>1500){
+            if (check.milliseconds() > 1600) {
                 selectioner.checkColors();
                 check.reset();
+            }
+            if (check.milliseconds() % 200 > 180) {
+                updateTelemetry();
             }
 
             if(rampUp)
@@ -210,7 +211,7 @@ public class TeleOpSolo extends LinearOpMode {
                 while (running) {
                     updatePosition();
                     if(target == 0 || target == 1 || target == 10) {
-                        updateTurretFusion();
+                        updateTurret();
                     }
                     sleep(10); // foloseste prea mult cpu !!!
                 }
@@ -218,7 +219,7 @@ public class TeleOpSolo extends LinearOpMode {
             updateTurret.start();
         }
     }
-    void updateTurretFusion() {
+    void updateTurret() {
 
         double dx = 0, dy = 0;
 

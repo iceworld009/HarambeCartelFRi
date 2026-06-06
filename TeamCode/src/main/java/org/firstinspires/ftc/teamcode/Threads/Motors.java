@@ -14,7 +14,7 @@ public class Motors {
     private DcMotorEx intakeMotor;
 
     private static Motors instance;
-    public static PIDFCoefficients MOTOR_VELO_PID = new PIDFCoefficients(7.5, 0, 0, 6);
+    public static PIDFCoefficients MOTOR_VELO_PID = new PIDFCoefficients(8, 0, 0, 6.3);
     private Motors(HardwareClass hw) {
         ramp = hw.ramp;
         ramp2 = hw.ramp2;
