@@ -15,9 +15,9 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
 public class Constants {
     public static FollowerConstants followerConstants = new FollowerConstants()
-            .mass(16)
-            .forwardZeroPowerAcceleration(-33.89)
-            .lateralZeroPowerAcceleration(-75.35)//-47
+            .mass(15.2)
+            .forwardZeroPowerAcceleration(-32.82)
+            .lateralZeroPowerAcceleration(-74.5)//-47
             .translationalPIDFCoefficients(new PIDFCoefficients(
                     0.1,
                     0,
@@ -45,10 +45,10 @@ public class Constants {
                     0
             ))
             .drivePIDFCoefficients(new FilteredPIDFCoefficients(
-                    0.01,
+                    0.01   ,
                     0,
                     0.00002,
-                    0.6,
+                    0.65,
                     0
             ))
             .secondaryDrivePIDFCoefficients(new FilteredPIDFCoefficients(
@@ -70,8 +70,8 @@ public class Constants {
             .leftRearMotorDirection(DcMotorSimple.Direction.REVERSE)
             .rightFrontMotorDirection(DcMotorSimple.Direction.FORWARD)
             .rightRearMotorDirection(DcMotorSimple.Direction.FORWARD)
-            .xVelocity(77)
-            .yVelocity(61);
+            .xVelocity(73)
+            .yVelocity(55.3);
 
     public static PinpointConstants localizerConstants = new PinpointConstants()
             .forwardPodY(-6.67)//-6.920p
@@ -84,13 +84,13 @@ public class Constants {
 
     public static PathConstraints pathConstraints = new PathConstraints(
             0.95,   // tValueConstraint
-            0.65,   // velocityConstraint
+            0.80,   // velocityConstraint stabil cca 0.80-0.90
             0.1,    // translationalConstraint
             0.009,  // headingConstraint
             50,     // timeout
-            1.6,    // brakingStrength
+            1.65,    // brakingStrength
             10,     // BEZIER_CURVE_SEARCH_LIMIT
-            21    // brakingStart
+            22      // brakingStart
     );
 
     public static Follower createFollower(HardwareMap hardwareMap) {

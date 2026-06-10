@@ -113,11 +113,11 @@ public class Selectioner{
 
     public void unloadBallsSlow(){  //Deprecated
         rightServoUp();
-        sleep(HardwareClass.bratBetween+50);
+        sleep(HardwareClass.bratBetween+45);
         leftServoUp();
-        sleep(HardwareClass.bratBetween+50);
+        sleep(HardwareClass.bratBetween+45);
         topServoUp();
-        sleep(HardwareClass.bratBetween+50);
+        sleep(HardwareClass.bratBetween+45);
     }
 
     public void setTagPos(int pos){
