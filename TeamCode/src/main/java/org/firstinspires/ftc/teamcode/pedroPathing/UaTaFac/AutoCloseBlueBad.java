@@ -29,15 +29,15 @@ import org.firstinspires.ftc.teamcode.pedroPathing.PoseStorage;
 public class AutoCloseBlueBad extends OpMode {
     int target=0;
     private final Pose startPose = new Pose(14.8, 25.3, Math.toRadians(230.5));
-    private final Pose scorePose = new Pose(55, 49  ,Math.toRadians(225));
-    private final Pose scorePose1 = new Pose(65,49,Math.toRadians(270));
-    private final Pose pickup1_3Pose = new Pose(63.1, 24.5, Math.toRadians(270));
+    private final Pose scorePose = new Pose(52, 49  ,Math.toRadians(225));
+    private final Pose scorePose1 = new Pose(52,49,Math.toRadians(270));
+    private final Pose pickup1_3Pose = new Pose(61.5, 24.5, Math.toRadians(270));
     private final Pose pickup2Pose = new Pose(78, 49   , Math.toRadians(270));
     private final Pose aux_2 = new Pose(82, 36   , Math.toRadians(270));
     private final Pose pickup2_3Pose = new Pose(85.5,18.8,Math.toRadians(270));
     private final Pose parkPose = new Pose(44, 51, Math.toRadians(215));
-    private final Pose unloadPose = new Pose(84.5,12,Math.toRadians(245));
-    private final Pose unloadPose2 = new Pose(84.8,12.5,Math.toRadians(245));
+    private final Pose unloadPose = new Pose(84,12,Math.toRadians(243));
+    private final Pose unloadPose2 = new Pose(84.3,12.5,Math.toRadians(243));
     private final Pose aux = new Pose (82 , 36  , Math.toRadians(245));
     DcMotor FR, FL, BR, BL;
     double shoots = 0;
@@ -65,7 +65,7 @@ public class AutoCloseBlueBad extends OpMode {
     double x, y;
     Pose BotPose;
 
-    double error, targetVelocity = 2600;
+    double error, targetVelocity = 2550;
 
     ElapsedTime unload_timer = new ElapsedTime();
     private final Object poseLock = new Object();
@@ -95,13 +95,11 @@ public class AutoCloseBlueBad extends OpMode {
                 })
                 .addPath(new BezierLine(pickup2Pose, pickup2_3Pose))
                 .setLinearHeadingInterpolation(pickup2Pose.getHeading(), pickup2_3Pose.getHeading())
-                .addPath(new BezierLine(pickup2_3Pose, aux_2))
-                .setLinearHeadingInterpolation(pickup2_3Pose.getHeading(), aux_2.getHeading())
                 .addParametricCallback(0.5,() -> {
                     motors.intakeReverse();
                 })
-                .addPath(new BezierLine(aux_2, scorePose1))
-                .setLinearHeadingInterpolation(aux_2.getHeading(), scorePose1.getHeading())
+                .addPath(new BezierCurve(pickup2_3Pose,aux_2, scorePose1))
+                .setLinearHeadingInterpolation(pickup2_3Pose.getHeading(), scorePose1.getHeading())
                 .addParametricCallback(0.1,() -> {
                     startPresiune();
                 })
@@ -229,7 +227,7 @@ public class AutoCloseBlueBad extends OpMode {
                         motors.intakeOn();
                     }
                     errorTelemetry();
-                    if (motors.getRampError(targetVelocity) > -90 || pathTimer.getElapsedTimeSeconds() > 1.5) {
+                    if ((motors.getRampError(targetVelocity) > -90 || pathTimer.getElapsedTimeSeconds() > 1.5) && follower.getVelocity().getMagnitude()<2) {
                         stopPresiune();
                         setPathState(2);
                     }
@@ -249,7 +247,7 @@ public class AutoCloseBlueBad extends OpMode {
                         motors.intakeOn();
                     }
                 errorTelemetry();
-               if (motors.getRampError(targetVelocity) > -75 || pathTimer.getElapsedTimeSeconds() > 1.5) {
+               if ((motors.getRampError(targetVelocity) > -70 || pathTimer.getElapsedTimeSeconds() > 1.5) && follower.getVelocity().getMagnitude()<2) {
                         stopPresiune();
                         setPathState(4);
                     }
@@ -284,7 +282,7 @@ public class AutoCloseBlueBad extends OpMode {
                         motors.intakeOn();
                     }
                     errorTelemetry();
-                    if (motors.getRampError(targetVelocity) > -75 || pathTimer.getElapsedTimeSeconds() > 1.5) {
+                    if ((motors.getRampError(targetVelocity) > -70 || pathTimer.getElapsedTimeSeconds() > 1.5) && follower.getVelocity().getMagnitude()<2) {
                         stopPresiune();
                         setPathState(9);
                     }
@@ -305,7 +303,7 @@ public class AutoCloseBlueBad extends OpMode {
                         motors.intakeOn();
                     }
                     errorTelemetry();
-                    if (motors.getRampError(targetVelocity) > -75 || pathTimer.getElapsedTimeSeconds() > 1.5) {
+                    if ((motors.getRampError(targetVelocity) > -70 || pathTimer.getElapsedTimeSeconds() > 1.5) && follower.getVelocity().getMagnitude()<2) {
                         stopPresiune();
                         setPathState(16);
                     }
@@ -341,7 +339,7 @@ public class AutoCloseBlueBad extends OpMode {
                         motors.intakeOn();
                     }
                     errorTelemetry();
-                    if (motors.getRampError(targetVelocity) > -75 || pathTimer.getElapsedTimeSeconds() > 1.5) {
+                    if ((motors.getRampError(targetVelocity) > -70 || pathTimer.getElapsedTimeSeconds() > 1.5) && follower.getVelocity().getMagnitude()<2) {
                         stopPresiune();
                         setPathState(16);
                     }
@@ -379,7 +377,7 @@ public class AutoCloseBlueBad extends OpMode {
                     errorTelemetry();
                     boolean conditionMet = motors.getRampError(targetVelocity) > -60;
                     boolean timeExpired = opmodeTimer.getElapsedTimeSeconds() >= 29.1;
-                    if (conditionMet || timeExpired || pathTimer.getElapsedTimeSeconds() > 1.5) {
+                    if (conditionMet || timeExpired || pathTimer.getElapsedTimeSeconds() > 1.5 || follower.getVelocity().getMagnitude()<2) {
                         stopPresiune();
                         setPathState(20);
                     }
@@ -407,7 +405,7 @@ public class AutoCloseBlueBad extends OpMode {
 
         distance = limelight.getDistanceODMan(x, y, HardwareClass.autoRedScorePoseX, HardwareClass.autoRedScorePoseY);
         error = motors.getRampError(targetVelocity);
-        motors.setRampCoefs(hardwareMap.voltageSensor.iterator().next().getVoltage());
+        motors.setRampCoefs(hardwareMap.voltageSensor.iterator().next().getVoltage(),-0.3);
         autonomousPathUpdate();
         distance = limelight.getDistanceOD(
                 follower.getPose().getX(),
@@ -469,7 +467,6 @@ public class AutoCloseBlueBad extends OpMode {
         turret.resetMotor();
         resetTurret();
         follower.setStartingPose(startPose);
-        motors.setRampCoefs();
         distance = limelight.getDistanceOD(follower.getPose().getX(), follower.getPose().getY(), target);
     }
 
@@ -520,14 +517,8 @@ public class AutoCloseBlueBad extends OpMode {
         }
     }
 
-    public void shootBall() {
-        selectioner.unloadBallsSlow();
-        sleep(300);
-        shoots++;
-    }
-
     public void startPresiune() {
-        hold(0.21);
+        //hold(0.21);
         motors.intakeOn();
         motors.setRampVelocityC((int) (targetVelocity));
     }

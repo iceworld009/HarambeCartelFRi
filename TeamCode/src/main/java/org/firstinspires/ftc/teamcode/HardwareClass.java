@@ -36,9 +36,9 @@ public class HardwareClass {
     public static double tagPosX = -72, tagPosY = 0;
 
     public static double selectTopLOW = 0.935, selectBotLLOW = 0.2,selectBotRLOW =0.89;
-    public static double selectTopHIGH = 0.45, selectBotLHIGH = 0.62,selectBotRHIGH = 0.46;
-    public static int bratDelay = 145; // 135
-    public static int bratBetween = 68; // 65
+    public static double selectTopHIGH = 0.45, selectBotLHIGH = 0.62,selectBotRHIGH = 0.59;
+    public static int bratDelay = 155; // 135
+    public static int bratBetween = 72; // 65
     public static int turret_min=-715, turret_max=0;
     public static double hood_LOW = 0.21, hood_HIGH = 0.46;
 

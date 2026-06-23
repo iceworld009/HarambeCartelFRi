@@ -11,55 +11,44 @@ import com.pedropathing.paths.PathConstraints;
 import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
 public class Constants {
     public static FollowerConstants followerConstants = new FollowerConstants()
-            .mass(15.2)
+            .mass(15.5)
             .forwardZeroPowerAcceleration(-32.82)
-            .lateralZeroPowerAcceleration(-74.5)//-47
+            .lateralZeroPowerAcceleration(-74.5)
+
             .translationalPIDFCoefficients(new PIDFCoefficients(
-                    0.1,
+                    0.020,
                     0,
-                    0.01,
-                    0.008
-            ))
-            .translationalPIDFSwitch(4)
-            .secondaryTranslationalPIDFCoefficients(new PIDFCoefficients(
-                    0.1,
-                    0,
-                    0.005,
-                    0.0005
+                    0.025,
+                    0.010
             ))
             .translationalPIDFSwitch(3.5)
+
+            .secondaryTranslationalPIDFCoefficients(new PIDFCoefficients(
+                    0.015,
+                    0,
+                    0.045,
+                    0.0005
+            ))
+
             .headingPIDFCoefficients(new PIDFCoefficients(
-                    1,
+                    0.35,
                     0,
-                    0.05,
-                    0
-            ))
-            .secondaryHeadingPIDFCoefficients(new PIDFCoefficients(
-                    1.2,
-                    0,
-                    0.05,
-                    0
-            ))
-            .drivePIDFCoefficients(new FilteredPIDFCoefficients(
-                    0.01   ,
-                    0,
-                    0.00002,
-                    0.65,
-                    0
-            ))
-            .secondaryDrivePIDFCoefficients(new FilteredPIDFCoefficients(
-                    0.02,
-                    0,
-                    0.000005,
-                    0.6,
+                    0.15,
                     0.01
             ))
+            .secondaryHeadingPIDFCoefficients(new PIDFCoefficients(
+                    0.25,
+                    0,
+                    0.22,
+                    0.0005
+            ))
             .drivePIDFSwitch(15)
-            .centripetalScaling(0.0004);
+            .centripetalScaling(0.0005);
 
     public static MecanumConstants driveConstants = new MecanumConstants()
             .leftFrontMotorName("FL")
@@ -74,7 +63,7 @@ public class Constants {
             .yVelocity(55.3);
 
     public static PinpointConstants localizerConstants = new PinpointConstants()
-            .forwardPodY(-6.67)//-6.920p
+            .forwardPodY(-6.67)
             .strafePodX(1.06)
             .distanceUnit(DistanceUnit.INCH)
             .hardwareMapName("pinpoint")
@@ -83,14 +72,14 @@ public class Constants {
             .strafeEncoderDirection(GoBildaPinpointDriver.EncoderDirection.REVERSED);
 
     public static PathConstraints pathConstraints = new PathConstraints(
-            0.95,   // tValueConstraint
-            0.80,   // velocityConstraint stabil cca 0.80-0.90
-            0.1,    // translationalConstraint
-            0.009,  // headingConstraint
-            50,     // timeout
-            1.65,    // brakingStrength
-            10,     // BEZIER_CURVE_SEARCH_LIMIT
-            22      // brakingStart
+            0.995,
+            0.09,
+            0.1,
+            0.009,
+            50,
+            0.75,
+            10,
+            50
     );
 
     public static Follower createFollower(HardwareMap hardwareMap) {

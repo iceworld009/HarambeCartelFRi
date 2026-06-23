@@ -60,10 +60,6 @@ public class Turret {
         generalPID.activetePower();
     }
 
-    public void still(){
-
-    }
-
     public void goToPosition(double target){
         generalPID.setReference(target);
     }
@@ -79,24 +75,13 @@ public class Turret {
         TurretMotor.setPower(0);
     }
 
-
-    public void resetPoition(){
-        generalPID.stop();
-        TurretMotor.setPower(0.2);
-        sleep(500);
-        resetMotor();
-        TurretMotor.setTargetPosition(305);
-        resetMotor();
-        generalPID.start();
-    }
-
     public void resume(){
         running = true;
         generalPID.start();
     }
 
     public void kill(){
-
+        generalPID.stop();
     }
 
     public void powerOFF(){
@@ -113,6 +98,13 @@ public class Turret {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+    }
+
+    public void resetTurret(){
+        goToPosition(1400);
+        sleep(800);
+        resetMotor();
+        powerOFF();
     }
 
     public boolean getStatus(){

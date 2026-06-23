@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.pedroPathing;
+package org.firstinspires.ftc.teamcode.pedroPathing.UaTaFac;
 
 
 import com.bylazar.telemetry.PanelsTelemetry;
@@ -38,8 +38,8 @@ public class AutoCloseBlue extends OpMode {
     private final Pose aux_2 = new Pose(82, 36   , Math.toRadians(270));
     private final Pose pickup2_3Pose = new Pose(85.5,18.8,Math.toRadians(270));
     private final Pose parkPose = new Pose(44, 51, Math.toRadians(215));
-    private final Pose unloadPose = new Pose(84.5,12,Math.toRadians(245));
-    private final Pose unloadPose2 = new Pose(84.8,12.5,Math.toRadians(245));
+    private final Pose unloadPose = new Pose(84,11.5,Math.toRadians(248));
+    private final Pose unloadPose2 = new Pose(84.5,12,Math.toRadians(247));
     private final Pose aux = new Pose (82 , 36  , Math.toRadians(245));
     DcMotor FR , FL , BR , BL;
     double shoots = 0;
@@ -417,6 +417,8 @@ public class AutoCloseBlue extends OpMode {
         distance = limelight.getDistanceODMan(x, y, HardwareClass.autoRedScorePoseX, HardwareClass.autoRedScorePoseY);
         error = motors.getRampError(targetVelocity);
         //targetVelocity = getRPM(distance);
+        if(target != -1)
+            updateTurretFusion();
         autonomousPathUpdate();
         distance = limelight.getDistanceOD(
                 follower.getPose().getX(),
@@ -511,9 +513,9 @@ public class AutoCloseBlue extends OpMode {
     }
 
     public void startPresiune(){
-        hold(0.25);
+        hold(0.18);
         motors.intakeOn();
-        motors.setCoefsMan(6,0,0,6);
+        motors.setCoefsMan(12,0,0,3.5);
         motors.setRampVelocityC((int)(targetVelocity));
     }
 
