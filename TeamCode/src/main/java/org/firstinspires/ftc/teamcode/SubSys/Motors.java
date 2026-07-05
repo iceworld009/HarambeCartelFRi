@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.Threads;
+package org.firstinspires.ftc.teamcode.SubSys;
 
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
@@ -12,9 +12,9 @@ public class Motors {
 
     private DcMotorEx ramp,ramp2;
     private DcMotorEx intakeMotor;
-
     private static Motors instance;
     public static PIDFCoefficients MOTOR_VELO_PID = new PIDFCoefficients(8, 0, 0, 6.3);
+    public double targetVelocity = 0;
     private Motors(HardwareClass hw) {
         ramp = hw.ramp;
         ramp2 = hw.ramp2;
@@ -24,8 +24,10 @@ public class Motors {
         ramp.setDirection(DcMotorSimple.Direction.REVERSE);
         intakeMotor.setDirection(DcMotorSimple.Direction.FORWARD);
     }
+
+
     public void intakeOn() {
-        intakeMotor.setPower(-1);
+        intakeSetVelocity(800);
     }
 
     public void intakeOff() {
@@ -33,29 +35,28 @@ public class Motors {
     }
 
     public void intakeReverse() {
-        intakeMotor.setPower(1);
+        intakeSetVelocity(-800);
     }
 
-    public void intakeSetVelocity(double velocity) {
+    private void intakeSetVelocity(double velocity) {
         intakeMotor.setVelocity(velocity);
     }
 
     public double getIntakeVelocity() {
-        return intakeMotor.getVelocity() * (60.0 / 145.6);
+        return intakeMotor.getVelocity() * (60.0 / 145.6); // 1150 rpm motor
     }
 
     public void setRampVelocityC(int velocity) {
         ramp.setVelocity(velocity);
         ramp2.setVelocity(velocity);
+        targetVelocity = velocity;
     }
     public double getVelocity() {
-        return (ramp.getVelocity()*60/28);
+        return (ramp.getVelocity()*60/28); // 6000 rpm motor
     }
 
-
-
-    public double getRampError(double x){
-        return getVelocity() - x;
+    public double getRampError(){
+        return getVelocity() - targetVelocity;
     }
 
     public void rampStop() {

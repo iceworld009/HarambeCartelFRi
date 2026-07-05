@@ -10,37 +10,23 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 
 @Config
 public class HardwareClass {
-
-
-    //Declarations
-    public DcMotor FR, FL , BR , BL;
-
-    public DcMotorEx ramp, ramp2, turret,intakeMotor;
-
     private static HardwareClass hardwareClass = null;
-
-
-    public Servo angle;
-    public Servo selectTop, selectBotR, selectBotL;
+    public DcMotor FR, FL , BR , BL;
+    public DcMotorEx ramp, ramp2, turret,intakeMotor;
+    public Servo angle, selectTop, selectBotR, selectBotL;
     public CRServo rise1, rise2;
-    public RevColorSensorV3 colorTop, colorBotR, colorBotL; //selection sensors
-    public RevColorSensorV3 colorTop2, colorBotR2, colorBotL2;
-    public static double startX = 64 ,startY = 0, startAngle=0;//Inch
-    public static double redX = -71, redY = 70;
-    public static double redScoreX = -71, redScoreY = 70;
-    public static double autoRedScorePoseX = 4, autoRedScorePoseY = 139;
-    public static double autoBlueScorePoseX= 4, autoBlueScorePoseY = 2;
+    public RevColorSensorV3 colorTop, colorBotR, colorBotL, colorTop2, colorBotR2, colorBotL2; //selection sensors
 
-    public static double blueX = -71, blueY = -70;
-    public static double blueScoreX = -71, blueScoreY = -70;
-    public static double tagPosX = -72, tagPosY = 0;
-
+    public static double hoodDown = 0 , hoodUp = 0;
+    public static double redX = -71, redY = 71;
+    public static double blueX = -71, blueY = -71;
+//    public static double autoRedScorePoseX = 4, autoRedScorePoseY = 139;
+//    public static double autoBlueScorePoseX= 4, autoBlueScorePoseY = 2;
     public static double selectTopLOW = 0.935, selectBotLLOW = 0.2,selectBotRLOW =0.89;
     public static double selectTopHIGH = 0.45, selectBotLHIGH = 0.62,selectBotRHIGH = 0.59;
     public static int bratDelay = 155; // 135
     public static int bratBetween = 72; // 65
     public static int turret_min=-715, turret_max=0;
-    public static double hood_LOW = 0.21, hood_HIGH = 0.46;
 
 
 
