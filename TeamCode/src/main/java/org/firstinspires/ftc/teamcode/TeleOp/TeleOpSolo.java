@@ -70,9 +70,13 @@ public class TeleOpSolo extends LinearOpMode {
         try {
             while (opModeIsActive()) {
 
+                if(gamepad1.right_trigger > 0.3){
+                    motors.intakeOn();
+                } else if(gamepad1.left_trigger > 0.3 ){
+                    motors.intakeReverse();
+                } else motors.intakeOff();
 
-
-
+                    
 
 
             }
@@ -115,20 +119,6 @@ public class TeleOpSolo extends LinearOpMode {
             dx = HardwareClass.redX - x;
             dy = HardwareClass.redY - y;
         }
-//        else if(target == 10) {
-//            if(greenPos == -1) {
-//                greenPos = limelight.checkApriltagResults();
-//            }
-//
-//            if(greenPos > 0 && greenPos < 4) {
-//                target = 0;
-//                limelight.setPipeline(4);
-//                selectioner.setTagPos(greenPos);
-//            }
-//
-//            dx = HardwareClass.tagPosX - x;
-//            dy = HardwareClass.tagPosY - y;
-//        }
 
         double goalAngle = Math.atan2(dy, dx);
         double robotHeading = BotPose.getHeading();

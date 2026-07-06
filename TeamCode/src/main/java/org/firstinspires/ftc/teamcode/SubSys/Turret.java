@@ -42,6 +42,7 @@ public class Turret {
     }
 
     public void goToPosition(double target) {
+        powerOn();
         pidController.setReference(target);
     }
 

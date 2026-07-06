@@ -79,7 +79,7 @@ public class TurretPID implements Runnable {
             double derivative = (error - lastError) / dt;
 
             // Basic windup guard
-            if (Math.abs(error) < 500) {
+            if (Math.abs(error) < 300) {
                 integralSum += error * dt;
             } else {
                 integralSum = 0;

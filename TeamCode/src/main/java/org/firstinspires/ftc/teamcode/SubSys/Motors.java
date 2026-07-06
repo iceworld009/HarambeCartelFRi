@@ -14,6 +14,8 @@ public class Motors {
     private DcMotorEx intakeMotor;
     private static Motors instance;
     public static PIDFCoefficients MOTOR_VELO_PID = new PIDFCoefficients(8, 0, 0, 6.3);
+    public static PIDFCoefficients MOTOR_INTAKE_PID = new PIDFCoefficients(5, 0, 0, 3);
+
     public double targetVelocity = 0;
     private Motors(HardwareClass hw) {
         ramp = hw.ramp;
@@ -23,6 +25,7 @@ public class Motors {
         ramp2.setDirection(DcMotorSimple.Direction.FORWARD);
         ramp.setDirection(DcMotorSimple.Direction.REVERSE);
         intakeMotor.setDirection(DcMotorSimple.Direction.FORWARD);
+        intakeMotor.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER,MOTOR_INTAKE_PID);
     }
 
 

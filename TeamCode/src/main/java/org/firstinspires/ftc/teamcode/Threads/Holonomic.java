@@ -22,10 +22,10 @@ public class Holonomic {
     private boolean running = false;
 
     public Holonomic(HardwareClass hardwareClass, Gamepad gamepad1, Gamepad gamepad2){
-//        this.FR = hardwareClass.FR;
-//        this.FL = hardwareClass.FL;
-//        this.BR = hardwareClass.BR;
-//        this.BL = hardwareClass.BL;
+        this.FR = hardwareClass.FR;
+        this.FL = hardwareClass.FL;
+        this.BR = hardwareClass.BR;
+        this.BL = hardwareClass.BL;
 
         this.gm = gamepad1;
         this.gm2 = gamepad2;
