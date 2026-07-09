@@ -11,21 +11,21 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 @Config
 public class HardwareClass {
     private static HardwareClass hardwareClass = null;
-    public DcMotor FR, FL , BR , BL;
-    public DcMotorEx ramp, ramp2, turret,intakeMotor;
+    public DcMotor FR, FL , BR , BL, intakeMotor;
+    public DcMotorEx ramp, ramp2, turret;
     public Servo angle, selectTop, selectBotR, selectBotL;
     public CRServo rise1, rise2;
     public RevColorSensorV3 colorTop, colorBotR, colorBotL, colorTop2, colorBotR2, colorBotL2; //selection sensors
 
     public static double hoodDown = 0 , hoodUp = 0;
-    public static double redX = -71, redY = 71;
-    public static double blueX = -71, blueY = -71;
-//    public static double autoRedScorePoseX = 4, autoRedScorePoseY = 139;
-//    public static double autoBlueScorePoseX= 4, autoBlueScorePoseY = 2;
-    public static double selectTopLOW = 0.935, selectBotLLOW = 0.2,selectBotRLOW =0.89;
-    public static double selectTopHIGH = 0.45, selectBotLHIGH = 0.62,selectBotRHIGH = 0.59;
-    public static int bratDelay = 155; // 135
-    public static int bratBetween = 72; // 65
+    public static double redX = 6, redY = 136;  // -71 71
+    public static double blueX = 138, blueY = 136; // -71 -71
+    public static double autoBlueScorePoseX=2, autoBlueScorePoseY=142, autoRedScorePoseX=142, autoRedScorePoseY=142;
+    public static double tagPosX = 72, tagPosY = 144;
+    public static double selectTopLOW = 0.925, selectBotLLOW = 0.2,selectBotRLOW =0.91;
+    public static double selectTopHIGH = 0.4, selectBotLHIGH = 0.62,selectBotRHIGH = 0.5;
+    public static int bratDelay = 155; // 155
+    public static int bratBetween = 75; // 65
     public static int turret_min=-715, turret_max=0;
 
 
@@ -43,7 +43,7 @@ public class HardwareClass {
 
         this.ramp = hardwareMap.get(DcMotorEx.class, "Ramp");
         this.ramp2 = hardwareMap.get(DcMotorEx.class,"Ramp2");
-        this.intakeMotor = hardwareMap.get(DcMotorEx.class, "IM");
+        this.intakeMotor = hardwareMap.get(DcMotor.class, "IM");
         this.turret = hardwareMap.get(DcMotorEx.class , "TR");
 
 

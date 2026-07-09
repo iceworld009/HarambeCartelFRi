@@ -3,14 +3,17 @@ package org.firstinspires.ftc.teamcode.Threads;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.HardwareClass;
 
 public class Holonomic {
 
+    //Declarations
     DcMotor FR , FL , BL , BR;
     Gamepad gm, gm2;
-    float deceleration = 1;
+
+    float decl = 1;
 
     private double BLPower , BRPower , FRPower , FLPower, totalPower = 0;
     private double power , turn, max , x , y;
@@ -37,9 +40,9 @@ public class Holonomic {
             thread = new Thread(() ->{
                 while(true){
                     if(running){
-                        x = gm.left_stick_x ;
-                        y = -(gm.left_stick_y) ;
-                        turn = (gm.right_stick_x) * deceleration;
+                        x = gm.left_stick_x;
+                        y = -(gm.left_stick_y);
+                        turn = (gm.right_stick_x ) * decl;
 
                         theta = Math.atan2(y , x);
                         power = Math.hypot(x, y);
@@ -53,10 +56,10 @@ public class Holonomic {
                         BLPower = power * sin/max + turn;
                         BRPower = power * cos/max - turn;
 
-                        FL.setPower(FLPower + totalPower + 0.05);
-                        FR.setPower(FRPower + totalPower + 0.05);
-                        BL.setPower(BLPower + totalPower - 0.05);
-                        BR.setPower(BRPower + totalPower - 0.05);
+                        FL.setPower(FLPower + totalPower + 0.12);
+                        FR.setPower(FRPower + totalPower + 0.12);
+                        BL.setPower(BLPower + totalPower - 0.12);
+                        BR.setPower(BRPower + totalPower - 0.12);
                     }
                 }
             });
@@ -64,9 +67,25 @@ public class Holonomic {
         thread.start();
     }
 
+    public void accel(){
+        decl = 1;
+    }
+
+    public void decel(){
+        decl = 0.5f;
+    }
+
+    public void setup(){
+        FL.setDirection(DcMotor.Direction.REVERSE);
+        BL.setDirection(DcMotor.Direction.REVERSE);
+        FR.setDirection(DcMotor.Direction.FORWARD);
+        BR.setDirection(DcMotor.Direction.FORWARD);
+    }
+
     public void stop(){
         running = false;
     }
+
 
     public void restart(){
         running = true;

@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.TeleOp;
 
 import static org.firstinspires.ftc.teamcode.Utils.GeneralUtils.*;
+import static org.firstinspires.ftc.teamcode.Utils.Geometry.*;
 
 import com.bylazar.telemetry.PanelsTelemetry;
 import com.bylazar.telemetry.TelemetryManager;
@@ -9,8 +10,10 @@ import com.pedropathing.geometry.Pose;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.HardwareClass;
+import org.firstinspires.ftc.teamcode.PoseStorage;
 import org.firstinspires.ftc.teamcode.SubSys.Limelight;
 import org.firstinspires.ftc.teamcode.SubSys.Motors;
 import org.firstinspires.ftc.teamcode.SubSys.Selectioner;
@@ -34,19 +37,25 @@ public class TeleOpSolo extends LinearOpMode {
     Pose BotPose;
     Thread updateTurret;
 
-    double targetVelocity, distance, error;
+    double targetVelocity, distance, error,targetPosition;
     double x,y;
-    double target, targetPosition;
+    int target;
 
+    boolean isShooting = false, canIdle = false;
+    ElapsedTime check = new ElapsedTime();
+    ElapsedTime temp = new ElapsedTime();
+    double tempVar = 0;
 
     public void runOpMode(){
         //Phase 1
+        hardwareClass = HardwareClass.getInstance(hardwareMap);
         follower = Constants.createFollower(hardwareMap);
+        if(PoseStorage.autoPose != null)
+            follower.setStartingPose(PoseStorage.autoPose);
         telemetryM = PanelsTelemetry.INSTANCE.getTelemetry();
         servos = Servos.getInstance(hardwareMap , telemetry);
         motors = Motors.getInstance(hardwareMap);
         turret = new Turret(hardwareClass,telemetry);
-        hardwareClass = HardwareClass.getInstance(hardwareMap);
         holonomic = Holonomic.getInstance(hardwareMap , gamepad1, gamepad2);
         limelight = Limelight.getInstance(hardwareMap,telemetry);
         selectioner = Selectioner.getInstance(hardwareClass, telemetry);
@@ -70,14 +79,80 @@ public class TeleOpSolo extends LinearOpMode {
         try {
             while (opModeIsActive()) {
 
+                distance = getDistanceOD(x,y,target);
+                error = motors.getRampError();
+                targetVelocity = getRPM(distance);
+
+                if(check.milliseconds()>60){
+                    updateTelemetry();
+                    check.reset();
+                }
+
+//                if(temp.milliseconds()>300){
+//                    if(gamepad1.a){
+//                        tempVar -= 30;
+//                    }
+//                    if(gamepad1.y){
+//                        tempVar += 30;
+//                    }
+//                    temp.reset();
+//                }
+
+                if(motors.getRampError() > -80 && isShooting ){
+                    selectioner.unloadBalls();
+                    sleep(100);
+                    motors.rampStop();
+                    isShooting = false;
+                }
+
+                if(canIdle && !isShooting){
+                    if(motors.getRampError() < 800 )
+                        motors.setRampVelocityC(1000);
+                }
+
                 if(gamepad1.right_trigger > 0.3){
                     motors.intakeOn();
                 } else if(gamepad1.left_trigger > 0.3 ){
                     motors.intakeReverse();
                 } else motors.intakeOff();
 
-                    
+                if(gamepad1.x){
+                    selectioner.unloadBallsSlow();
+                }
 
+                if(gamepad1.right_bumper){
+                    isShooting = true;
+                    canIdle = true;
+                    motors.setRampVelocityC(getRPM(distance) + 300);
+                    sleep(300);
+                    motors.setRampVelocityC(getRPM(distance));
+                }
+
+                if(gamepad1.left_bumper){
+                  isShooting = false;
+                  canIdle = false;
+                  motors.rampStop();
+                }
+
+                if(gamepad1.right_stick_button)
+                {
+                    target = 0;
+                } else if(gamepad1.left_stick_button){
+                    target = 1;
+                } else if(gamepad1.ps){
+                    target = 10;
+                }
+
+                if(gamepad1.dpad_up){
+                    target = -1;
+                    turret.resetTurret();
+                    target = 10;
+                }
+                if(gamepad1.dpad_left)
+                    follower.setPose(PoseStorage.bluePose);
+
+                if(gamepad1.dpad_right)
+                    follower.setPose(PoseStorage.redPose);
 
             }
         } finally {
@@ -119,6 +194,10 @@ public class TeleOpSolo extends LinearOpMode {
             dx = HardwareClass.redX - x;
             dy = HardwareClass.redY - y;
         }
+        else if(target== 10){
+            dx= HardwareClass.tagPosX - x;
+            dy = HardwareClass.tagPosY -y;
+        }
 
         double goalAngle = Math.atan2(dy, dx);
         double robotHeading = BotPose.getHeading();
@@ -157,8 +236,12 @@ public class TeleOpSolo extends LinearOpMode {
         telemetry.addData("y" , y);
         telemetry.addData("Distance: " , distance);
         telemetry.addData("Velocity",motors.getVelocity());
+        telemetry.addData("TargetVelocity:",targetVelocity+tempVar);
         telemetry.addData("Turret error",getTurretError());
         telemetry.addData("Velocity error",error);
+        telemetryM.addData("VelocityTarget",targetVelocity+tempVar);
+        telemetryM.addData("Velocity:",motors.getVelocity());
+        telemetryM.update();
         telemetry.update();
     }
 

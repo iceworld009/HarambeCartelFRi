@@ -66,13 +66,14 @@ public class Turret {
         turretMotor.setPower(0);
     }
 
-    public void resetTurret() {
-        goToPosition(1400);
-        sleep(800);
-        resetMotor();
-        powerOFF();
-    }
 
+    public void resetTurret() {
+        goToPosition(1000);
+        sleep(900);
+        resetMotor();
+        sleep(50);
+        goToPosition((HardwareClass.turret_min + HardwareClass.turret_max)/2.0);
+    }
 
     public boolean getStatus() {
         return isSetup;

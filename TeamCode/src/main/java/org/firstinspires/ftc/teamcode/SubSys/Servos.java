@@ -8,10 +8,11 @@ import org.firstinspires.ftc.teamcode.HardwareClass;
 public class Servos {
     private HardwareClass hardwareClass;
     private static Servos single_instance = null;
-    Servo hood = hardwareClass.angle;
+    Servo hood = null;
 
     public Servos(HardwareClass hardwareClass, Telemetry telemetry , HardwareMap hardwareMap) {
         this.hardwareClass = hardwareClass;
+        this.hood =hardwareClass.angle;
     }
 
     public void hoodSetPos(double pos){ //0 = down, 1 = up
