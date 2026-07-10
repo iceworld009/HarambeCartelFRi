@@ -17,7 +17,7 @@ public class Turret {
     private boolean isSetup = false;
 
     // Tuning parameters
-    public static double kp = 0.006, ki = 0, kd = 0.00002;
+    public static double kp = 0.0055, ki = 0, kd = 0.00003;
 
     public Turret(HardwareClass hardwareClass, Telemetry telemetry) {
         this.turretMotor = hardwareClass.turret;
@@ -69,9 +69,8 @@ public class Turret {
 
     public void resetTurret() {
         goToPosition(1000);
-        sleep(900);
+        sleep(1200);
         resetMotor();
-        sleep(50);
         goToPosition((HardwareClass.turret_min + HardwareClass.turret_max)/2.0);
     }
 

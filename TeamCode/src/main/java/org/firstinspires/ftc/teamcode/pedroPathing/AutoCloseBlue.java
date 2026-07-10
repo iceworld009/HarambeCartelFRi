@@ -29,7 +29,7 @@ import org.firstinspires.ftc.teamcode.PoseStorage;
 public class AutoCloseBlue extends OpMode {
     private static final int REP = 3000;
     private static final int TELEMETRY_UPDATE_INTERVAL = 50;
-    private static final double DEFAULT_TARGET_VELOCITY = 2650;
+    private static final double DEFAULT_TARGET_VELOCITY = 2600;
     private static final double PRELOAD_RAMP_THRESHOLD = -110;
     private static final double STANDARD_RAMP_THRESHOLD = -50;
     private static final double FINAL_RAMP_THRESHOLD = -65;
@@ -39,20 +39,19 @@ public class AutoCloseBlue extends OpMode {
     private static final long UNLOAD_WAIT_STAGE3_MS = 1000;
     private static final int POST_UNLOAD_SLEEP_MS = 800;
 
-    // Cutoff so the last shot doesn't run out of auto time
+    // Cutoff so the last shot doesn't run out of auto timey
     private static final double OPMODE_TIME_LIMIT_FINAL_S = 28.8;
     private final Pose startPose = new Pose(27.7, 130.85, Math.toRadians(138));
-    private final Pose scorePose = new Pose(60, 84, Math.toRadians(180));
-    private final Pose scorePose1 = new Pose(60, 82 , Math.toRadians(180)); // scorePose used only by turret
+    private final Pose scorePose = new Pose(57, 82, Math.toRadians(180));
+    private final Pose scorePose1 = new Pose(57, 82 , Math.toRadians(180)); // scorePose used only by turret
     private final Pose pickup1_3Pose = new Pose(25, 82, Math.toRadians(180));
     private final Pose pickup2Pose = new Pose(42, 61.5, Math.toRadians(180));
     private final Pose pickup2_3Pose = new Pose(17.5, 61.5, Math.toRadians(180));
-    private final Pose aux_2 = new Pose(60, 60, Math.toRadians(180));
-
     private final Pose parkPose = new Pose(36, 84, Math.toRadians(180));
-    private final Pose unloadPose = new Pose(14.25, 61.5, Math.toRadians(153)); //14 61.75 153
-    private final Pose unloadPose2 = new Pose(14.25, 61.5, Math.toRadians(153));
-    private final Pose aux = new Pose(60, 60, Math.toRadians(180));
+    private final Pose unloadPose = new Pose(9, 61.75, Math.toRadians(153)); //14 61.75 153
+    private final Pose unloadPose2 = new Pose(9, 61.75, Math.toRadians(153));
+    private final Pose aux = new Pose(63, 55, Math.toRadians(180));
+    private final Pose aux_2 = new Pose(63, 55, Math.toRadians(180));
 
     // Hardware / subsystem references
     private DcMotor FR, FL, BR, BL;
@@ -242,6 +241,13 @@ public class AutoCloseBlue extends OpMode {
         stopPresiune();
     }
 
+    private void waitForGate(double waitTime){
+        ElapsedTime waitTimer = new ElapsedTime();
+        while(waitTimer.milliseconds()< waitTime){
+            follower.update();
+        }
+    }
+
     public void autonomousPathUpdate() {
         switch (pathState) {
 
@@ -280,7 +286,6 @@ public class AutoCloseBlue extends OpMode {
 
             case 5:
                 if (!follower.isBusy() && unloadTimer.milliseconds() > UNLOAD_WAIT_STAGE1_MS) {
-                    sleep(POST_UNLOAD_SLEEP_MS);
                     hold(0);
                     setPathState(7);
                 }
