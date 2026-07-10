@@ -22,7 +22,6 @@ import org.firstinspires.ftc.teamcode.SubSys.Motors;
 import org.firstinspires.ftc.teamcode.SubSys.Selectioner;
 import org.firstinspires.ftc.teamcode.SubSys.Servos;
 import org.firstinspires.ftc.teamcode.SubSys.Turret;
-import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.teamcode.PoseStorage;
 
 @Autonomous(name = "Auto Far Red", group = "Test")
@@ -30,9 +29,9 @@ public class AutoFarRed extends OpMode {
 
     private static final int REP = 4500;                    // max poll iterations while ramping flywheel
     private static final int TELEMETRY_UPDATE_INTERVAL = 25; // only push telemetry every N iterations
-    /** needs ajustment !!!
+    /** needs adjustment !!!
      *  try to rise and lower the rpm in magnitude of 25 rpm +-
-     * */
+     */
     private static final double DEFAULT_TARGET_VELOCITY = 3850;  //3900 +-
 
 
@@ -42,16 +41,16 @@ public class AutoFarRed extends OpMode {
     private static final int PIPELINE_PRESEEK = 1;
     private static final int PIPELINE_AIM = 4;
 
-    private static final double AIM_Y_OFFSET = -5;
+    private static final double AIM_Y_OFFSET = 0;
 
     private static final int POST_SHOT_SLEEP_MS = 100;
     private static final int TURRET_RESET_SLEEP_MS = 500;
 
-    private final Pose startPose = new Pose(133.6, 86.95, Math.toRadians(180));
-    private final Pose scorePose = new Pose(123.5, 86.7, Math.toRadians(90));
-    private final Pose pickupScore1 = new Pose(108.42, 101, Math.toRadians(90));
-    private final Pose pickupScore1_3 = new Pose(108.42, 130, Math.toRadians(90));
-    private final Pose pickupPose2_2 = new Pose(132, 130, Math.toRadians(90));
+    private final Pose startPose = new Pose(86, 9, Math.toRadians(90));
+    private final Pose scorePose = new Pose(86, 17, Math.toRadians(0));
+    private final Pose pickupScore1 = new Pose(101, 34, Math.toRadians(0));
+    private final Pose pickupScore1_3 = new Pose(125, 34, Math.toRadians(0));
+    private final Pose pickupPose2_2 = new Pose(125, 10, Math.toRadians(15));//60 59 345?
 
     // Hardware
     private DcMotor FR, FL, BR, BL;
@@ -63,6 +62,7 @@ public class AutoFarRed extends OpMode {
     private HardwareClass hardwareClass;
     private Turret turret;
     private TelemetryManager telemetryM;
+    private Thread updateTurret = null;
 
     private Timer pathTimer, opmodeTimer;
     private final ElapsedTime timer = new ElapsedTime();
@@ -157,6 +157,7 @@ public class AutoFarRed extends OpMode {
 
             case 0:
                 setPathState(1);
+                follower.followPath(scorePreload,true);
                 startPresiune();
                 break;
 
@@ -176,7 +177,7 @@ public class AutoFarRed extends OpMode {
 
             case 3:
                 if (!follower.isBusy()) {
-                    waitForRampThenStop(STANDARD_RAMP_THRESHOLD);
+                    //waitForRampThenStop(STANDARD_RAMP_THRESHOLD);
                     setPathState(4);
                 }
                 break;
@@ -190,7 +191,7 @@ public class AutoFarRed extends OpMode {
 
             case 5:
                 if (!follower.isBusy()) {
-                    waitForRampThenStop(STANDARD_RAMP_THRESHOLD);
+                    //waitForRampThenStop(STANDARD_RAMP_THRESHOLD);
                     setPathState(6);
                 }
                 break;
@@ -205,7 +206,7 @@ public class AutoFarRed extends OpMode {
             case 7:
                 if (!follower.isBusy()) {
                     startPresiune();
-                    waitForRampThenStop(STANDARD_RAMP_THRESHOLD);
+                    //waitForRampThenStop(STANDARD_RAMP_THRESHOLD);
                     setPathState(8);
                 }
                 break;
@@ -220,7 +221,7 @@ public class AutoFarRed extends OpMode {
             case 9:
                 if (!follower.isBusy()) {
                     startPresiune();
-                    waitForRampThenStop(STANDARD_RAMP_THRESHOLD);
+                    //waitForRampThenStop(STANDARD_RAMP_THRESHOLD);
                     setPathState(10);
                 }
                 break;
@@ -235,7 +236,7 @@ public class AutoFarRed extends OpMode {
             case 11:
                 if (!follower.isBusy()) {
                     startPresiune();
-                    waitForRampThenStop(STANDARD_RAMP_THRESHOLD);
+                    //waitForRampThenStop(STANDARD_RAMP_THRESHOLD);
                     follower.followPath(park); // NOTE: missing "true" hold-end arg, unlike other followPath calls
                     setPathState(100);
                 }
@@ -263,9 +264,6 @@ public class AutoFarRed extends OpMode {
         distance = getDistanceODMan(x, y, HardwareClass.autoRedScorePoseX, HardwareClass.autoRedScorePoseY);
         error = motors.getRampError();
 
-        if (target != -1) {
-            updateTurretFusion();
-        }
 
         autonomousPathUpdate();
 
@@ -338,6 +336,7 @@ public class AutoFarRed extends OpMode {
         selectioner.setTagPos(possibleGreenPos);
         limelight.stop();
         turret.powerOn();
+        startUpdate();
         setPathState(0);
     }
 
@@ -347,6 +346,22 @@ public class AutoFarRed extends OpMode {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
+        }
+    }
+
+    public void startUpdate() {
+        boolean running = true;
+        if (updateTurret == null || !updateTurret.isAlive()) {
+            updateTurret = new Thread(() -> {
+                while (running) {
+                    updatePosition();
+                    if(target == 0 || target == 1 || target == 10) {
+                        updateTurret();
+                    }
+                    sleep(10); // foloseste prea mult cpu !!!
+                }
+            });
+            updateTurret.start();
         }
     }
 
@@ -385,7 +400,7 @@ public class AutoFarRed extends OpMode {
     }
 
     /** Odometry-driven turret aim */
-    private void updateTurretFusion() {
+    private void updateTurret() {
         limelight.setPipeline(PIPELINE_AIM);
         double dx = HardwareClass.autoRedScorePoseX - x;
         double dy = HardwareClass.autoRedScorePoseY - y + AIM_Y_OFFSET;
