@@ -22,32 +22,37 @@ import org.firstinspires.ftc.teamcode.SubSys.Motors;
 import org.firstinspires.ftc.teamcode.SubSys.Selectioner;
 import org.firstinspires.ftc.teamcode.SubSys.Servos;
 import org.firstinspires.ftc.teamcode.SubSys.Turret;
-import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.teamcode.PoseStorage;
 
 @Autonomous(name = "Auto Far Blue", group = "Test")
 public class AutoFarBlue extends OpMode {
 
-    private static final int REP = 9000;                    // max poll iterations while ramping flywheel
-    private static final int TELEMETRY_UPDATE_INTERVAL = 25;
-    private static final double DEFAULT_TARGET_VELOCITY = 3850;
-    private static final double RAMP_THRESHOLD = -60;
+    private static final int REP = 4500;                    // max poll iterations while ramping flywheel
+    private static final int TELEMETRY_UPDATE_INTERVAL = 25; // only push telemetry every N iterations
+    /** needs adjustment !!!
+     *  try to rise and lower the rpm in magnitude of 25 rpm +-
+     */
+    private static final double DEFAULT_TARGET_VELOCITY = 3720;  //3900 +-
 
-    private static final double START_DELAY_SECONDS = 22;
-    private static final double PARK_MAX_POWER = 0.8;
-    private static final int PRE_PARK_SLEEP_MS = 2000;
-    private static final double PARK_BRAKING_START = 3;
-    private static final double PARK_BRAKING_STRENGTH = 0.4;
 
-    private static final double VISION_OFFSET_DEADBAND = 2;
-    private static final double VISION_OFFSET_GAIN = 0.18;
-    private static final double VISION_OFFSET_DECAY = 0.8;
-    private static final double AIM_Y_OFFSET = 1; // small vertical aim correction
+    private static final double PRELOAD_RAMP_THRESHOLD = -60;
+    private static final double STANDARD_RAMP_THRESHOLD = -80;
 
-    private final Pose startPose = new Pose(133.6, 86.95, Math.toRadians(180));
-    private final Pose parkPose = new Pose(100, 89, Math.toRadians(180));
+    private static final int PIPELINE_PRESEEK = 1;
+    private static final int PIPELINE_AIM = 4;
 
-    // Hardware / subsystem references
+    private static final double AIM_X_OFFSET = 8;
+
+    private static final int POST_SHOT_SLEEP_MS = 100;
+    private static final int TURRET_THREAD_PERIOD_MS = 10;
+
+    private final Pose startPose = new Pose(58, 9, Math.toRadians(90));
+    private final Pose scorePose = new Pose(58, 17, Math.toRadians(180));
+    private final Pose pickupScore1 = new Pose(43, 34, Math.toRadians(180));
+    private final Pose pickupScore1_3 = new Pose(19, 34, Math.toRadians(180));
+    private final Pose pickupPose2_2 = new Pose(20, 16, Math.toRadians(165));
+
+    // Hardware
     private DcMotor FR, FL, BR, BL;
     private Follower follower;
     private Servos servos;
@@ -58,9 +63,11 @@ public class AutoFarBlue extends OpMode {
     private Turret turret;
     private TelemetryManager telemetryM;
 
+    private Thread turretThread = null;
+    private volatile boolean turretThreadRunning = false;
+
     private Timer pathTimer, opmodeTimer;
     private final ElapsedTime timer = new ElapsedTime();
-    private final ElapsedTime sleepyyeah = new ElapsedTime();
 
     // State
     private int pathState;
@@ -75,15 +82,52 @@ public class AutoFarBlue extends OpMode {
     private double error;
     private double targetVelocity = DEFAULT_TARGET_VELOCITY;
 
-    private PathChain park;
+    private PathChain scorePreload, grabFirst, grabHuman, park;
 
     public void buildPaths() {
+        scorePreload = follower.pathBuilder()
+                .addPath(new BezierLine(startPose, scorePose))
+                .setLinearHeadingInterpolation(startPose.getHeading(), scorePose.getHeading())
+                .build();
+
+        grabFirst = follower.pathBuilder()
+                .addPath(new BezierLine(scorePose, pickupScore1))
+                .setLinearHeadingInterpolation(scorePose.getHeading(), pickupScore1.getHeading())
+                .addParametricCallback(0, () -> {
+                    motors.intakeOn();
+                    selectioner.resetServos();
+                })
+                .addPath(new BezierLine(pickupScore1, pickupScore1_3))
+                .setLinearHeadingInterpolation(pickupScore1.getHeading(), pickupScore1_3.getHeading())
+                .addPath(new BezierLine(pickupScore1_3, scorePose))
+                .setLinearHeadingInterpolation(pickupScore1_3.getHeading(), scorePose.getHeading())
+                .addParametricCallback(0.1, this::startPresiune)
+                .addParametricCallback(0.3, () -> motors.intakeReverse())
+                .setGlobalDeceleration(0.4)
+                .build();
+
+        grabHuman = follower.pathBuilder()
+                .addPath(new BezierLine(scorePose, pickupPose2_2))
+                .setLinearHeadingInterpolation(scorePose.getHeading(), pickupPose2_2.getHeading())
+                .addParametricCallback(0, () -> {
+                    motors.intakeOn();
+                    selectioner.resetServos();
+                })
+                .addPath(new BezierLine(pickupPose2_2, scorePose))
+                .setLinearHeadingInterpolation(pickupPose2_2.getHeading(), scorePose.getHeading())
+                .addParametricCallback(0.1, this::startPresiune)
+                .addParametricCallback(0.5, () -> motors.intakeReverse())
+                .addParametricCallback(0.9, () -> {
+                    motors.intakeOff();
+                    PoseStorage.autoPose = follower.getPose();
+                })
+                .setGlobalDeceleration(0.5)
+                .build();
+
         park = follower.pathBuilder()
-                .addPath(new BezierLine(startPose, parkPose))
-                .setLinearHeadingInterpolation(startPose.getHeading(), parkPose.getHeading())
-                .setGlobalDeceleration()
-                .setBrakingStart(PARK_BRAKING_START)
-                .setBrakingStrength(PARK_BRAKING_STRENGTH)
+                .addPath(new BezierLine(scorePose, pickupScore1))
+                .setLinearHeadingInterpolation(scorePose.getHeading(), pickupScore1.getHeading())
+                .setGlobalDeceleration(0.5)
                 .build();
     }
 
@@ -94,7 +138,11 @@ public class AutoFarBlue extends OpMode {
         BR.setPower(-power);
     }
 
+    /**
+     * Spins up the flywheel and polls the ramp error until it settles (or REP iterations pass),
+     */
     private void waitForRampThenStop(double rampThreshold) {
+        motors.intakeOn();
         for (int i = 0; i < REP; i++) {
             if (i % TELEMETRY_UPDATE_INTERVAL == 0) {
                 errorTelemetry();
@@ -110,23 +158,87 @@ public class AutoFarBlue extends OpMode {
         switch (pathState) {
 
             case 0:
-                if (sleepyyeah.seconds() > START_DELAY_SECONDS) {
-                    startPresiune();
-                    setPathState(1);
-                }
+                setPathState(1);
+                follower.followPath(scorePreload, true);
+                startPresiune();
                 break;
 
             case 1:
                 if (!follower.isBusy()) {
-                    waitForRampThenStop(RAMP_THRESHOLD);
+                    waitForRampThenStop(PRELOAD_RAMP_THRESHOLD);
                     setPathState(2);
                 }
                 break;
 
             case 2:
                 if (!follower.isBusy()) {
-                    follower.setMaxPower(PARK_MAX_POWER);
-                    sleep(PRE_PARK_SLEEP_MS);
+                    follower.followPath(grabFirst, true);
+                    setPathState(3);
+                }
+                break;
+
+            case 3:
+                if (!follower.isBusy()) {
+                    waitForRampThenStop(STANDARD_RAMP_THRESHOLD);
+                    setPathState(4);
+                }
+                break;
+
+            case 4:
+                if (!follower.isBusy()) {
+                    follower.followPath(grabHuman, true);
+                    setPathState(5);
+                }
+                break;
+
+            case 5:
+                if (!follower.isBusy()) {
+                    waitForRampThenStop(STANDARD_RAMP_THRESHOLD);
+                    setPathState(6);
+                }
+                break;
+
+            case 6:
+                if (!follower.isBusy()) {
+                    follower.followPath(grabHuman, true);
+                    setPathState(7);
+                }
+                break;
+
+            case 7:
+                if (!follower.isBusy()) {
+                    startPresiune();
+                    waitForRampThenStop(STANDARD_RAMP_THRESHOLD);
+                    setPathState(8);
+                }
+                break;
+
+            case 8:
+                if (!follower.isBusy()) {
+                    follower.followPath(grabHuman, true);
+                    setPathState(9);
+                }
+                break;
+
+            case 9:
+                if (!follower.isBusy()) {
+                    startPresiune();
+                    waitForRampThenStop(STANDARD_RAMP_THRESHOLD);
+                    setPathState(10);
+                }
+                break;
+
+            case 10:
+                if (!follower.isBusy()) {
+                    follower.followPath(grabHuman, true);
+                    setPathState(11);
+                }
+                break;
+
+            case 11:
+                if (!follower.isBusy()) {
+                    startPresiune();
+                    waitForRampThenStop(STANDARD_RAMP_THRESHOLD);
                     follower.followPath(park, true);
                     setPathState(100);
                 }
@@ -136,6 +248,7 @@ public class AutoFarBlue extends OpMode {
                 if (!follower.isBusy()) {
                     PoseStorage.autoPose = follower.getPose();
                     setPathState(-1);
+                    hold(0);
                 }
                 break;
         }
@@ -148,19 +261,12 @@ public class AutoFarBlue extends OpMode {
 
     @Override
     public void loop() {
-        follower.update();
-        updatePosition();
+        //follower.update();
+        //updatePosition();
 
         distance = getDistanceODMan(x, y, HardwareClass.autoRedScorePoseX, HardwareClass.autoRedScorePoseY);
-
         error = motors.getRampError();
-
-        if (target != -1) {
-            updateTurretFusion();
-        }
-
         autonomousPathUpdate();
-
 
         telemetry.addData("path state", pathState);
         telemetry.addData("x", follower.getPose().getX());
@@ -192,14 +298,14 @@ public class AutoFarBlue extends OpMode {
         motors = Motors.getInstance(hardwareMap);
         limelight = Limelight.getInstance(hardwareMap, telemetry);
         limelight.setup();
-        limelight.setPipeline(1);
+        limelight.setPipeline(PIPELINE_PRESEEK);
         selectioner = Selectioner.getInstance(hardwareClass, telemetry);
         follower = Constants.createFollower(hardwareMap);
         buildPaths();
 
         hardwareClass.FL.setDirection(DcMotorSimple.Direction.REVERSE);
         hardwareClass.BL.setDirection(DcMotorSimple.Direction.REVERSE);
-        hardwareClass.intakeMotor.setDirection(DcMotorSimple.Direction.FORWARD);
+        motors.intakeMotor.setDirection(DcMotorSimple.Direction.REVERSE);
         telemetryM = PanelsTelemetry.INSTANCE.getTelemetry();
 
         FL = hardwareClass.FL;
@@ -210,8 +316,7 @@ public class AutoFarBlue extends OpMode {
 
         turret = new Turret(hardwareClass, telemetry);
         turret.setup();
-        turret.resetMotor();
-        resetTurret();
+        turret.resetTurret();
 
         follower.setStartingPose(startPose);
         motors.setRampCoefs();
@@ -229,8 +334,9 @@ public class AutoFarBlue extends OpMode {
         selectioner.setTagPos(possibleGreenPos);
         limelight.stop();
         turret.powerOn();
+        startUpdate();
         setPathState(0);
-        sleepyyeah.reset();
+        servos.hoodSetPos(0.5);
     }
 
     private void sleep(int delayMs) {
@@ -242,8 +348,42 @@ public class AutoFarBlue extends OpMode {
         }
     }
 
+    public void startUpdate() {
+        if (turretThread == null || !turretThread.isAlive()) {
+            turretThreadRunning = true;
+            turretThread = new Thread(() -> {
+                while (turretThreadRunning) {
+                    updatePosition();
+                    follower.update();
+                    if (target == 0 || target == 1 || target == 10) {
+                        updateTurret();
+                    }
+                    try {
+                        Thread.sleep(TURRET_THREAD_PERIOD_MS);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
+                }
+            });
+            turretThread.start();
+        }
+    }
+
+    private void stopUpdate() {
+        turretThreadRunning = false;
+        if (turretThread != null) {
+            turretThread.interrupt();
+            try {
+                turretThread.join(200);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
+
     public void startPresiune() {
-        hold(0.18);
+        hold(0.25);
         selectioner.resetServos();
         motors.intakeOn();
         motors.setCoefsMan(12, 0, 0, 3.5);
@@ -254,20 +394,9 @@ public class AutoFarBlue extends OpMode {
         PoseStorage.autoPose = follower.getPose();
         selectioner.unloadBallsSlow();
         motors.setRampVelocityC((int) (0.33 * targetVelocity));
-        sleep(100);
+        sleep(POST_SHOT_SLEEP_MS);
         motors.intakeOff();
         hold(0);
-    }
-
-    private void resetTurret() {
-        target = -1;
-        turret.goToPosition(1400);
-        sleep(500);
-        turret.resetMotor();
-        turret.goToPosition((HardwareClass.turret_max + HardwareClass.turret_min) / 2.0);
-        target = 1;
-        sleep(500);
-        turret.powerOFF();
     }
 
     private void updatePosition() {
@@ -276,10 +405,11 @@ public class AutoFarBlue extends OpMode {
         y = botPose.getY();
     }
 
-    private void updateTurretFusion() {
-        limelight.setPipeline(0);
-        double dx = HardwareClass.autoBlueScorePoseX - x;
-        double dy = HardwareClass.autoBlueScorePoseY - y + AIM_Y_OFFSET;
+    /** Odometry-driven turret aim */
+    private void updateTurret() {
+        limelight.setPipeline(PIPELINE_AIM);
+        double dx = HardwareClass.autoBlueScorePoseX - x + AIM_X_OFFSET;
+        double dy = HardwareClass.autoBlueScorePoseY - y;
 
         double goalAngle = Math.atan2(dy, dx);
         double thetaR = botPose.getHeading();
@@ -293,16 +423,6 @@ public class AutoFarBlue extends OpMode {
                 HardwareClass.turret_min, HardwareClass.turret_max
         );
 
-        if (limelight.checkResults()) {
-            double tx = limelight.getXPos();
-            if (Math.abs(tx) > VISION_OFFSET_DEADBAND) {
-                visionOffset -= tx * VISION_OFFSET_GAIN;
-            }
-        } else {
-            visionOffset *= VISION_OFFSET_DECAY;
-        }
-        targetPosition += visionOffset;
-
         targetPosition = Math.min(Math.max(targetPosition, HardwareClass.turret_min), HardwareClass.turret_max);
         turret.goToPosition(targetPosition);
     }
@@ -313,7 +433,9 @@ public class AutoFarBlue extends OpMode {
 
     @Override
     public void stop() {
+        stopUpdate();
         motors.rampStop();
         turret.stop();
+        hold(0);
     }
 }

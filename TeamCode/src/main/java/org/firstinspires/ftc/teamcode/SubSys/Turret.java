@@ -70,8 +70,10 @@ public class Turret {
     public void resetTurret() {
         goToPosition(1000);
         sleep(1200);
+        goToPosition(1200);
+        sleep(200);
         resetMotor();
-        goToPosition((HardwareClass.turret_min + HardwareClass.turret_max)/2.0);
+        goToPosition((HardwareClass.turret_max + HardwareClass.turret_min)/2.0);
     }
 
     public boolean getStatus() {

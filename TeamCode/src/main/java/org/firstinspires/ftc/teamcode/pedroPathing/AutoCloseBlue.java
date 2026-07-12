@@ -9,6 +9,7 @@ import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.BezierCurve;
 import com.pedropathing.geometry.BezierLine;
 import com.pedropathing.geometry.Pose;
+import com.pedropathing.paths.Path;
 import com.pedropathing.paths.PathChain;
 import com.pedropathing.util.Timer;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
@@ -18,47 +19,49 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.HardwareClass;
-import org.firstinspires.ftc.teamcode.SubSys.Limelight;
 import org.firstinspires.ftc.teamcode.SubSys.Motors;
 import org.firstinspires.ftc.teamcode.SubSys.Selectioner;
 import org.firstinspires.ftc.teamcode.SubSys.Servos;
 import org.firstinspires.ftc.teamcode.SubSys.Turret;
+import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.teamcode.PoseStorage;
 
 @Autonomous(name = "Auto Close Blue", group = "Test")
 public class AutoCloseBlue extends OpMode {
-    private static final int REP = 3000;
-    private static final int TELEMETRY_UPDATE_INTERVAL = 50;
-    private static final double DEFAULT_TARGET_VELOCITY = 2600;
+
+    private static final int REP = 3000;                    // max poll iterations while ramping flywheel
+    private static final int TELEMETRY_UPDATE_INTERVAL = 25; // only push telemetry every N iterations
+    private static final double DEFAULT_TARGET_VELOCITY = 2450;
+
     private static final double PRELOAD_RAMP_THRESHOLD = -110;
-    private static final double STANDARD_RAMP_THRESHOLD = -50;
+    private static final double STANDARD_RAMP_THRESHOLD = -80;
     private static final double FINAL_RAMP_THRESHOLD = -65;
 
-    private static final long UNLOAD_WAIT_STAGE1_MS = 1100;
-    private static final long UNLOAD_WAIT_STAGE2_MS = 1100;
-    private static final long UNLOAD_WAIT_STAGE3_MS = 1000;
-    private static final int POST_UNLOAD_SLEEP_MS = 800;
+    private static final long UNLOAD_WAIT_STAGE1_MS = 2300;
+    private static final long UNLOAD_WAIT_STAGE2_MS = 2500;
+    private static final long UNLOAD_WAIT_STAGE3_MS = 1150;
+    private static final int POST_UNLOAD_SLEEP_MS = 1200;
 
-    // Cutoff so the last shot doesn't run out of auto timey
-    private static final double OPMODE_TIME_LIMIT_FINAL_S = 28.8;
-    private final Pose startPose = new Pose(27.7, 130.85, Math.toRadians(138));
-    private final Pose scorePose = new Pose(57, 82, Math.toRadians(180));
-    private final Pose scorePose1 = new Pose(57, 82 , Math.toRadians(180)); // scorePose used only by turret
-    private final Pose pickup1_3Pose = new Pose(25, 82, Math.toRadians(180));
-    private final Pose pickup2Pose = new Pose(42, 61.5, Math.toRadians(180));
-    private final Pose pickup2_3Pose = new Pose(17.5, 61.5, Math.toRadians(180));
-    private final Pose parkPose = new Pose(36, 84, Math.toRadians(180));
-    private final Pose unloadPose = new Pose(9, 61.75, Math.toRadians(153)); //14 61.75 153
-    private final Pose unloadPose2 = new Pose(9, 61.75, Math.toRadians(153));
-    private final Pose aux = new Pose(63, 55, Math.toRadians(180));
-    private final Pose aux_2 = new Pose(63, 55, Math.toRadians(180));
+    // Cutoff so the last shot doesn't run us out of auto time
+    private static final double OPMODE_TIME_LIMIT_FINAL_S = 29.1;
 
-    // Hardware / subsystem references
+    private final Pose startPose = new Pose(14.8, 25.3, Math.toRadians(230.5));
+    private final Pose scorePose = new Pose(46.1, 45, Math.toRadians(225));
+    private final Pose scorePose1 = new Pose(64, 49, Math.toRadians(270));
+    private final Pose pickup1_3Pose = new Pose(63.1, 24.5, Math.toRadians(270));
+    private final Pose pickup2Pose = new Pose(78, 49, Math.toRadians(270));
+    private final Pose aux_2 = new Pose(82, 36, Math.toRadians(270));
+    private final Pose pickup2_3Pose = new Pose(85.5, 18, Math.toRadians(270));
+    private final Pose parkPose = new Pose(40.7, 51, Math.toRadians(215));
+    private final Pose unloadPose = new Pose(82.8, 11, Math.toRadians(248));
+    private final Pose unloadPose2 = new Pose(83.1, 11, Math.toRadians(245));
+    private final Pose aux = new Pose(82, 36, Math.toRadians(245));
+
+    // Hardware
     private DcMotor FR, FL, BR, BL;
     private Follower follower;
     private Servos servos;
     private Motors motors;
-    private Limelight limelight;
     private Selectioner selectioner;
     private HardwareClass hardwareClass;
     private Turret turret;
@@ -67,11 +70,13 @@ public class AutoCloseBlue extends OpMode {
     private Timer pathTimer, opmodeTimer;
     private final ElapsedTime timer = new ElapsedTime();
     private ElapsedTime unloadTimer = new ElapsedTime();
-    Thread updateTurret = null;
+
     // State
     private int pathState;
     private int target = 0;
+    private boolean isResetTurret = true;
     private int possibleGreenPos = -1;
+    private double shoots = 0;
 
     private double targetAngle, targetPosition, distance;
     private double x, y;
@@ -79,7 +84,7 @@ public class AutoCloseBlue extends OpMode {
     private double error;
     private double targetVelocity = DEFAULT_TARGET_VELOCITY;
 
-    private PathChain scorePreloadChain, grabFirst, grabFromRack, scoreFromRack, parkBot;
+    private PathChain scorePreloadChain, grabFirst, grabFromRack, scoreFromRack;
     private PathChain grabSecond, grabFromRack2, scoreFromRack2, scoreFromRack3;
 
     public void buildPaths() {
@@ -91,33 +96,33 @@ public class AutoCloseBlue extends OpMode {
                     startPresiune();
                     PoseStorage.autoPose = follower.getPose();
                 })
-                .setGlobalDeceleration(0.6)
+                .setGlobalDeceleration(0.4)
                 .build();
 
         grabFirst = follower.pathBuilder()
                 .addPath(new BezierLine(scorePose, pickup2Pose))
                 .setLinearHeadingInterpolation(scorePose.getHeading(), pickup2Pose.getHeading())
-                .addParametricCallback(0.5, () -> {
+                .addParametricCallback(0, () -> {
                     motors.intakeOn();
                     selectioner.resetServos();
                 })
                 .addPath(new BezierLine(pickup2Pose, pickup2_3Pose))
                 .setLinearHeadingInterpolation(pickup2Pose.getHeading(), pickup2_3Pose.getHeading())
-                .addPath(new BezierCurve(pickup2_3Pose, aux_2,scorePose1))
-                .setLinearHeadingInterpolation(pickup2_3Pose.getHeading(), scorePose1.getHeading())
+                .addPath(new BezierLine(pickup2_3Pose, aux_2))
+                .setLinearHeadingInterpolation(pickup2_3Pose.getHeading(), aux_2.getHeading())
                 .addParametricCallback(0.5, () -> motors.intakeReverse())
+                .addPath(new BezierLine(aux_2, scorePose1))
+                .setLinearHeadingInterpolation(aux_2.getHeading(), scorePose1.getHeading())
                 .addParametricCallback(0.1, this::startPresiune)
                 .addParametricCallback(0.95, () -> {
                     motors.intakeOff();
                     PoseStorage.autoPose = follower.getPose();
                 })
-                .setGlobalDeceleration(0.6)
+                .setGlobalDeceleration(0.4)
                 .build();
 
         grabSecond = follower.pathBuilder()
-                .setGlobalDeceleration(0.8)
                 .addPath(new BezierLine(scorePose1, pickup1_3Pose))
-                .setBrakingStrength(1.2)
                 .setLinearHeadingInterpolation(scorePose1.getHeading(), pickup1_3Pose.getHeading())
                 .addParametricCallback(0, () -> {
                     motors.intakeOn();
@@ -130,39 +135,37 @@ public class AutoCloseBlue extends OpMode {
                     motors.intakeReverse();
                     PoseStorage.autoPose = follower.getPose();
                 })
-                .setGlobalDeceleration(0.6)
+                .setGlobalDeceleration(0.5)
                 .build();
 
         grabFromRack = follower.pathBuilder()
-                .setGlobalDeceleration(1)
                 .addPath(new BezierCurve(scorePose1, aux_2, unloadPose))
-                .setLinearHeadingInterpolation(scorePose1.getHeading(), unloadPose.getHeading(), 0.5)
+                .setLinearHeadingInterpolation(scorePose1.getHeading(), unloadPose.getHeading())
                 .addParametricCallback(0, () -> {
                     motors.intakeOn();
                     selectioner.resetServos();
                 })
                 .addParametricCallback(1, () -> {
                     unloadTimer.reset();
-                    hold(0.6);
                     PoseStorage.autoPose = follower.getPose();
                 })
-                .setGlobalDeceleration(0.6)
+                .setGlobalDeceleration(0.5)
                 .build();
 
         grabFromRack2 = follower.pathBuilder()
-                .setGlobalDeceleration(1)
-                .addPath(new BezierCurve(scorePose1, aux,unloadPose2))
-                .setLinearHeadingInterpolation(scorePose1.getHeading(), unloadPose2.getHeading(),0.5)
+                .addPath(new BezierLine(scorePose1, aux))
+                .setLinearHeadingInterpolation(scorePose1.getHeading(), aux.getHeading())
+                .addPath(new BezierLine(aux, unloadPose2))
+                .setLinearHeadingInterpolation(aux.getHeading(), unloadPose2.getHeading())
                 .addParametricCallback(0, () -> {
                     motors.intakeOn();
                     selectioner.resetServos();
                 })
                 .addParametricCallback(0.9, () -> {
                     unloadTimer.reset();
-                    hold(0.6);
                     PoseStorage.autoPose = follower.getPose();
                 })
-                .setGlobalDeceleration(0.6)
+                .setGlobalDeceleration(0.5)
                 .build();
 
         scoreFromRack = follower.pathBuilder()
@@ -175,7 +178,7 @@ public class AutoCloseBlue extends OpMode {
                     motors.intakeReverse();
                     PoseStorage.autoPose = follower.getPose();
                 })
-                .setGlobalDeceleration(0.6)
+                .setGlobalDeceleration(0.5)
                 .build();
 
         scoreFromRack2 = follower.pathBuilder()
@@ -189,12 +192,12 @@ public class AutoCloseBlue extends OpMode {
                     motors.intakeReverse();
                     PoseStorage.autoPose = follower.getPose();
                 })
-                .setGlobalDeceleration(0.6)
+                .setGlobalDeceleration(0.5)
                 .build();
 
         scoreFromRack3 = follower.pathBuilder()
-                .addPath(new BezierLine(unloadPose2, scorePose1))
-                .setLinearHeadingInterpolation(unloadPose2.getHeading(), scorePose1.getHeading())
+                .addPath(new BezierLine(unloadPose2, parkPose))
+                .setLinearHeadingInterpolation(unloadPose2.getHeading(), parkPose.getHeading())
                 .addParametricCallback(0, () -> {
                     motors.intakeReverse();
                     startPresiune();
@@ -203,12 +206,7 @@ public class AutoCloseBlue extends OpMode {
                     motors.intakeReverse();
                     PoseStorage.autoPose = follower.getPose();
                 })
-                .setGlobalDeceleration(0.6)
-                .build();
-        parkBot = follower.pathBuilder()
-                .addPath(new BezierLine(scorePose1, parkPose))
-                .setConstantHeadingInterpolation(scorePose1.getHeading())
-                .setGlobalDeceleration(0.8)
+                .setGlobalDeceleration(0.5)
                 .build();
     }
 
@@ -239,13 +237,6 @@ public class AutoCloseBlue extends OpMode {
             }
         }
         stopPresiune();
-    }
-
-    private void waitForGate(double waitTime){
-        ElapsedTime waitTimer = new ElapsedTime();
-        while(waitTimer.milliseconds()< waitTime){
-            follower.update();
-        }
     }
 
     public void autonomousPathUpdate() {
@@ -279,14 +270,14 @@ public class AutoCloseBlue extends OpMode {
 
             case 4:
                 if (!follower.isBusy()) {
-                    follower.followPath(grabFromRack, 0.9,true);
+                    follower.followPath(grabFromRack, true);
                     setPathState(5);
                 }
                 break;
 
             case 5:
                 if (!follower.isBusy() && unloadTimer.milliseconds() > UNLOAD_WAIT_STAGE1_MS) {
-                    hold(0);
+                    sleep(POST_UNLOAD_SLEEP_MS);
                     setPathState(7);
                 }
                 break;
@@ -307,7 +298,7 @@ public class AutoCloseBlue extends OpMode {
 
             case 9:
                 if (!follower.isBusy()) {
-                    follower.followPath(grabSecond, 0.9, true);
+                    follower.followPath(grabSecond, true);
                     setPathState(10);
                 }
                 break;
@@ -316,20 +307,19 @@ public class AutoCloseBlue extends OpMode {
                 if (!follower.isBusy()) {
                     startPresiune();
                     waitForRampThenStop(STANDARD_RAMP_THRESHOLD);
-                    setPathState(11); // jumps to 16 !!!!!!!
+                    setPathState(16); // jumps to 16 !!!!!!!
                 }
                 break;
 
             case 11:
                 if (!follower.isBusy()) {
-                    follower.followPath(grabFromRack2, 0.9,true);
+                    follower.followPath(grabFromRack2, true);
                     setPathState(12);
                 }
                 break;
 
             case 12:
                 if (!follower.isBusy() && unloadTimer.milliseconds() > UNLOAD_WAIT_STAGE2_MS) {
-                    hold(0);
                     setPathState(14);
                 }
                 break;
@@ -351,7 +341,7 @@ public class AutoCloseBlue extends OpMode {
 
             case 16:
                 if (!follower.isBusy()) {
-                    follower.followPath(grabFromRack2,0.9, true);
+                    follower.followPath(grabFromRack2, true);
                     setPathState(17);
                 }
                 break;
@@ -359,7 +349,6 @@ public class AutoCloseBlue extends OpMode {
             case 17:
                 if (!follower.isBusy() && unloadTimer.milliseconds() > UNLOAD_WAIT_STAGE3_MS) {
                     setPathState(18);
-                    hold(0);
                 }
                 break;
 
@@ -374,7 +363,6 @@ public class AutoCloseBlue extends OpMode {
                 if (!follower.isBusy()) {
                     PoseStorage.autoPose = follower.getPose();
                     waitForRampThenStop(FINAL_RAMP_THRESHOLD, OPMODE_TIME_LIMIT_FINAL_S);
-                    follower.followPath(parkBot,0.9,true);
                     setPathState(20);
                 }
                 break;
@@ -396,12 +384,13 @@ public class AutoCloseBlue extends OpMode {
     @Override
     public void loop() {
         follower.update();
+        updatePosition();
 
         distance = getDistanceODMan(x, y, HardwareClass.autoRedScorePoseX, HardwareClass.autoRedScorePoseY);
         error = motors.getRampError();
 
         if (target != -1) {
-            updateTurret();
+            updateTurretFusion();
         }
 
         autonomousPathUpdate();
@@ -409,28 +398,16 @@ public class AutoCloseBlue extends OpMode {
         distance = getDistanceOD(follower.getPose().getX(), follower.getPose().getY(), target);
 
         telemetry.addData("path state", pathState);
+        telemetry.addData("x", follower.getPose().getX());
+        telemetry.addData("y", follower.getPose().getY());
+        telemetry.addData("heading", follower.getPose().getHeading());
         telemetry.addData("RPM", motors.getVelocity());
-        telemetry.addData("Error:",error);
         telemetry.addData("Target Velocity", targetVelocity);
         telemetry.addData("Distance to target", distance);
         telemetry.addData("Timer", timer.milliseconds());
+        telemetry.addData("PreAutoSeek", possibleGreenPos);
+        telemetryM.addData("Rpm", motors.getVelocity());
         telemetry.update();
-    }
-
-    public void startUpdate() {
-        boolean running = true;
-        if (updateTurret == null || !updateTurret.isAlive()) {
-            updateTurret = new Thread(() -> {
-                while (running) {
-                    updatePosition();
-                    if(target == 0 || target == 1 || target == 10) {
-                        updateTurret();
-                    }
-                    sleep(10); // foloseste prea mult cpu !!!
-                }
-            });
-            updateTurret.start();
-        }
     }
 
     public void errorTelemetry() {
@@ -448,22 +425,20 @@ public class AutoCloseBlue extends OpMode {
         hardwareClass = HardwareClass.getInstance(hardwareMap);
         servos = Servos.getInstance(hardwareMap, telemetry);
         motors = Motors.getInstance(hardwareMap);
-        limelight = Limelight.getInstance(hardwareMap, telemetry);
-        limelight.setup();
-        limelight.setPipeline(1);
         selectioner = Selectioner.getInstance(hardwareClass, telemetry);
         follower = Constants.createFollower(hardwareMap);
         buildPaths();
 
         hardwareClass.FL.setDirection(DcMotorSimple.Direction.REVERSE);
         hardwareClass.BL.setDirection(DcMotorSimple.Direction.REVERSE);
+        hardwareClass.intakeMotor.setDirection(DcMotorSimple.Direction.FORWARD);
         telemetryM = PanelsTelemetry.INSTANCE.getTelemetry();
 
         FL = hardwareClass.FL;
         FR = hardwareClass.FR;
         BL = hardwareClass.BL;
         BR = hardwareClass.BR;
-        motors.intakeMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+
         unloadTimer = new ElapsedTime();
 
         turret = new Turret(hardwareClass, telemetry);
@@ -473,7 +448,7 @@ public class AutoCloseBlue extends OpMode {
 
         follower.setStartingPose(startPose);
         motors.setRampCoefs();
-        distance =getDistanceOD(follower.getPose().getX(), follower.getPose().getY(), target);
+        distance = getDistanceOD(follower.getPose().getX(), follower.getPose().getY(), target);
     }
 
     @Override
@@ -485,9 +460,7 @@ public class AutoCloseBlue extends OpMode {
     public void start() {
         opmodeTimer.resetTimer();
         selectioner.setTagPos(possibleGreenPos);
-        limelight.stop();
         turret.powerOn();
-        startUpdate();
         setPathState(0);
     }
 
@@ -501,7 +474,7 @@ public class AutoCloseBlue extends OpMode {
     }
 
     public void startPresiune() {
-        hold(0.3);
+        hold(0.18);
         motors.intakeOn();
         motors.setCoefsMan(12, 0, 0, 3.5);
         motors.setRampVelocityC((int) targetVelocity);
@@ -510,7 +483,6 @@ public class AutoCloseBlue extends OpMode {
     public void stopPresiune() {
         PoseStorage.autoPose = follower.getPose();
         selectioner.unloadBalls();
-        sleep(50);
         motors.setRampVelocityC((int) (0.33 * targetVelocity));
         sleep(100);
         motors.intakeOff();
@@ -521,6 +493,7 @@ public class AutoCloseBlue extends OpMode {
         target = -1;
         turret.goToPosition(1400);
         sleep(500);
+        isResetTurret = true;
         turret.resetMotor();
         turret.goToPosition(turret.getPosition());
         target = 1;
@@ -534,8 +507,7 @@ public class AutoCloseBlue extends OpMode {
         y = botPose.getY();
     }
 
-    private void updateTurret() {
-        limelight.setPipeline(0);
+    private void updateTurretFusion() {
         double dx = HardwareClass.autoBlueScorePoseX - x;
         double dy = HardwareClass.autoBlueScorePoseY - y;
 
@@ -550,7 +522,6 @@ public class AutoCloseBlue extends OpMode {
                 -2 * Math.PI / 3, 2 * Math.PI / 3,
                 HardwareClass.turret_min, HardwareClass.turret_max
         );
-
 
         targetPosition = Math.min(Math.max(targetPosition, HardwareClass.turret_min), HardwareClass.turret_max);
         turret.goToPosition(targetPosition);

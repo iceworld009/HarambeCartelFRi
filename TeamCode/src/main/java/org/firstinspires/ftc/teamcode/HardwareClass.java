@@ -20,12 +20,12 @@ public class HardwareClass {
     public static double hoodDown = 0 , hoodUp = 0;
     public static double redX = 6, redY = 136;  // -71 71
     public static double blueX = 138, blueY = 136; // -71 -71
-    public static double autoBlueScorePoseX=2, autoBlueScorePoseY=144, autoRedScorePoseX=142, autoRedScorePoseY=144;
+    public static double autoBlueScorePoseX=2, autoBlueScorePoseY=143, autoRedScorePoseX=142, autoRedScorePoseY=143;
     public static double tagPosX = 72, tagPosY = 144;
     public static double selectTopLOW = 0.91, selectBotLLOW = 0.2,selectBotRLOW =0.91;
-    public static double selectTopHIGH = 0.46, selectBotLHIGH = 0.62,selectBotRHIGH = 0.5;
-    public static int bratDelay = 165; // 135
-    public static int bratBetween = 65; // 65
+    public static double selectTopHIGH = 0.43, selectBotLHIGH = 0.62,selectBotRHIGH = 0.5;
+    public static int bratDelay = 175; // 135
+    public static int bratBetween = 70; // 65
     public static int turret_min=-715, turret_max=0;
 
 
