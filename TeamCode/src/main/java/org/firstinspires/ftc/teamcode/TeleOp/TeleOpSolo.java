@@ -22,10 +22,18 @@ import org.firstinspires.ftc.teamcode.SubSys.Turret;
 import org.firstinspires.ftc.teamcode.Threads.Holonomic;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
-@TeleOp(name="TeleOp Solo", group = "Solo")
+@TeleOp(name = "TeleOp Solo", group = "Solo")
 public class TeleOpSolo extends LinearOpMode {
 
-    HardwareClass  hardwareClass;
+    private static final int TURRET_THREAD_PERIOD_MS = 10;
+    private static final int SHOT_RAMP_OVERSHOOT_RPM = 300;
+    private static final int SHOT_KICK_SLEEP_MS = 300;
+    private static final double SHOOT_DONE_RAMP_ERROR = -80;
+    private static final int POST_SHOT_SLEEP_MS = 100;
+    private static final double IDLE_RPM = 1000;
+    private static final double IDLE_RAMP_ERROR_CEILING = 800;
+
+    HardwareClass hardwareClass;
     Motors motors;
     Servos servos;
     Selectioner selectioner;
@@ -34,42 +42,45 @@ public class TeleOpSolo extends LinearOpMode {
     Limelight limelight;
     Follower follower;
     TelemetryManager telemetryM;
-    Pose BotPose;
+    volatile Pose BotPose;
     Thread updateTurret;
+    private volatile boolean turretThreadRunning = false;
 
-    double targetVelocity, distance, error,targetPosition;
-    double x,y;
-    int target;
+    double targetVelocity, distance, error, targetPosition;
+    volatile double x, y;
+    volatile int target;
 
     boolean isShooting = false, canIdle = false;
     ElapsedTime check = new ElapsedTime();
     ElapsedTime temp = new ElapsedTime();
     double tempVar = 0;
 
-    public void runOpMode(){
-        //Phase 1
+    boolean prevRightBumper, prevLeftBumper, prevX, prevDpadUp, prevDpadLeft, prevDpadRight;
+
+    public void runOpMode() {
+        // Phase 1
         hardwareClass = HardwareClass.getInstance(hardwareMap);
         follower = Constants.createFollower(hardwareMap);
-        if(PoseStorage.autoPose != null)
+        if (PoseStorage.autoPose != null)
             follower.setStartingPose(PoseStorage.autoPose);
         telemetryM = PanelsTelemetry.INSTANCE.getTelemetry();
-        servos = Servos.getInstance(hardwareMap , telemetry);
+        servos = Servos.getInstance(hardwareMap, telemetry);
         motors = Motors.getInstance(hardwareMap);
-        turret = new Turret(hardwareClass,telemetry);
-        holonomic = Holonomic.getInstance(hardwareMap , gamepad1, gamepad2);
-        limelight = Limelight.getInstance(hardwareMap,telemetry);
+        turret = new Turret(hardwareClass, telemetry);
+        holonomic = Holonomic.getInstance(hardwareMap, gamepad1, gamepad2);
+        limelight = Limelight.getInstance(hardwareMap, telemetry);
         selectioner = Selectioner.getInstance(hardwareClass, telemetry);
         hardwareClass.FL.setDirection(DcMotorSimple.Direction.REVERSE);
         hardwareClass.BL.setDirection(DcMotorSimple.Direction.REVERSE);
         selectioner.checkColors();
         motors.setRampCoefs(hardwareMap.voltageSensor.iterator().next().getVoltage());
-
-        //Phase 2
+        motors.intakeMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+        // Phase 2
         turret.setup();
         telemetry.addLine("Ready! ");
         telemetry.update();
         waitForStart();
-        if(!holonomic.getStatus()){
+        if (!holonomic.getStatus()) {
             holonomic.start();
         }
         selectioner.resetServos();
@@ -79,11 +90,11 @@ public class TeleOpSolo extends LinearOpMode {
         try {
             while (opModeIsActive()) {
 
-                distance = getDistanceOD(x,y,target);
+                distance = getDistanceOD(x, y, target);
                 error = motors.getRampError();
                 targetVelocity = getRPM(distance);
 
-                if(check.milliseconds()>60){
+                if (check.milliseconds() > 60) {
                     updateTelemetry();
                     check.reset();
                 }
@@ -98,105 +109,122 @@ public class TeleOpSolo extends LinearOpMode {
 //                    temp.reset();
 //                }
 
-                if(motors.getRampError() > -80 && isShooting ){
+                if (motors.getRampError() > SHOOT_DONE_RAMP_ERROR && isShooting) {
                     selectioner.unloadBalls();
-                    sleep(100);
+                    sleep(POST_SHOT_SLEEP_MS);
                     motors.rampStop();
                     isShooting = false;
                 }
 
-                if(canIdle && !isShooting){
-                    if(motors.getRampError() < 800 )
-                        motors.setRampVelocityC(1000);
+                if (canIdle && !isShooting) {
+                    if (motors.getRampError() < IDLE_RAMP_ERROR_CEILING)
+                        motors.setRampVelocityC((int) IDLE_RPM);
                 }
 
-                if(gamepad1.right_trigger > 0.3){
+                if (gamepad1.right_trigger > 0.3) {
                     motors.intakeOn();
-                } else if(gamepad1.left_trigger > 0.3 ){
+                } else if (gamepad1.left_trigger > 0.3) {
                     motors.intakeReverse();
                 } else motors.intakeOff();
 
-                if(gamepad1.x){
+                if (gamepad1.x && !prevX) {
                     selectioner.unloadBallsSlow();
                 }
 
-                if(gamepad1.right_bumper){
+                if (gamepad1.right_bumper && !prevRightBumper) {
                     isShooting = true;
                     canIdle = true;
-                    motors.setRampVelocityC(getRPM(distance) + 300);
-                    sleep(300);
-                    motors.setRampVelocityC(getRPM(distance));
+                    motors.setRampVelocityC((getRPM(distance) + SHOT_RAMP_OVERSHOOT_RPM));
+                    sleep(SHOT_KICK_SLEEP_MS);
+                    motors.setRampVelocityC( getRPM(distance));
                 }
 
-                if(gamepad1.left_bumper){
-                  isShooting = false;
-                  canIdle = false;
-                  motors.rampStop();
+                if (gamepad1.left_bumper && !prevLeftBumper) {
+                    isShooting = false;
+                    canIdle = false;
+                    motors.rampStop();
                 }
 
-                if(gamepad1.right_stick_button)
-                {
-                    target = 0;
-                } else if(gamepad1.left_stick_button){
+                if (gamepad1.right_stick_button) {
                     target = 1;
-                } else if(gamepad1.ps){
+                } else if (gamepad1.left_stick_button) {
+                    target = 0;
+                } else if (gamepad1.ps) {
                     target = 10;
                 }
 
-                if(gamepad1.dpad_up){
+                if (gamepad1.dpad_up && !prevDpadUp) {
                     target = -1;
                     turret.resetTurret();
                     target = 10;
                 }
-                if(gamepad1.dpad_left)
+                if (gamepad1.dpad_left && !prevDpadLeft)
                     follower.setPose(PoseStorage.bluePose);
 
-                if(gamepad1.dpad_right)
+                if (gamepad1.dpad_right && !prevDpadRight)
                     follower.setPose(PoseStorage.redPose);
 
+                prevX = gamepad1.x;
+                prevRightBumper = gamepad1.right_bumper;
+                prevLeftBumper = gamepad1.left_bumper;
+                prevDpadUp = gamepad1.dpad_up;
+                prevDpadLeft = gamepad1.dpad_left;
+                prevDpadRight = gamepad1.dpad_right;
             }
         } finally {
+            stopUpdate();
+
             if (turret != null) {
                 turret.stop();
             }
 
-            if(holonomic.getStatus()){
+            if (holonomic.getStatus()) {
                 holonomic.stop();
             }
         }
-
     }
 
     public void startUpdate() {
-        boolean running = true;
         if (updateTurret == null || !updateTurret.isAlive()) {
+            turretThreadRunning = true;
             updateTurret = new Thread(() -> {
-                while (running) {
+                while (turretThreadRunning) {
                     updatePosition();
-                    if(target == 0 || target == 1 || target == 10) {
+                    if (target == 0 || target == 1 || target == 10) {
                         updateTurret();
                     }
-                    sleep(10); // foloseste prea mult cpu !!!
+                    sleep(TURRET_THREAD_PERIOD_MS);
                 }
             });
             updateTurret.start();
         }
     }
+
+    private void stopUpdate() {
+        turretThreadRunning = false;
+        if (updateTurret != null) {
+            updateTurret.interrupt();
+            try {
+                updateTurret.join(200);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
+
     void updateTurret() {
 
         double dx = 0, dy = 0;
 
-        if(target == 1) {
+        if (target == 1) {
             dx = HardwareClass.blueX - x;
             dy = HardwareClass.blueY - y;
-        }
-        else if(target == 0) {
+        } else if (target == 0) {
             dx = HardwareClass.redX - x;
             dy = HardwareClass.redY - y;
-        }
-        else if(target== 10){
-            dx= HardwareClass.tagPosX - x;
-            dy = HardwareClass.tagPosY -y;
+        } else if (target == 10) {
+            dx = HardwareClass.tagPosX - x;
+            dy = HardwareClass.tagPosY - y;
         }
 
         double goalAngle = Math.atan2(dy, dx);
@@ -212,35 +240,35 @@ public class TeleOpSolo extends LinearOpMode {
         );
 
         targetPosition = Math.max(
-                HardwareClass.turret_min+10,
-                Math.min(HardwareClass.turret_max-10, targetPosition)
+                HardwareClass.turret_min + 10,
+                Math.min(HardwareClass.turret_max - 10, targetPosition)
         );
         turret.goToPosition(targetPosition);
     }
 
-    double getTurretError(){
-        return turret.getPosition()-targetPosition;
+    double getTurretError() {
+        return turret.getPosition() - targetPosition;
     }
 
-    void updatePosition(){
+    void updatePosition() {
         follower.update();
         BotPose = follower.getPose();
         x = BotPose.getX();
         y = BotPose.getY();
     }
 
-    void updateTelemetry(){
+    void updateTelemetry() {
 
         telemetry.clearAll();
-        telemetry.addData("x" , x);
-        telemetry.addData("y" , y);
-        telemetry.addData("Distance: " , distance);
-        telemetry.addData("Velocity",motors.getVelocity());
-        telemetry.addData("TargetVelocity:",targetVelocity+tempVar);
-        telemetry.addData("Turret error",getTurretError());
-        telemetry.addData("Velocity error",error);
-        telemetryM.addData("VelocityTarget",targetVelocity+tempVar);
-        telemetryM.addData("Velocity:",motors.getVelocity());
+        telemetry.addData("x", x);
+        telemetry.addData("y", y);
+        telemetry.addData("Distance: ", distance);
+        telemetry.addData("Velocity", motors.getVelocity());
+        telemetry.addData("TargetVelocity:", targetVelocity + tempVar);
+        telemetry.addData("Turret error", getTurretError());
+        telemetry.addData("Velocity error", error);
+        telemetryM.addData("VelocityTarget", targetVelocity + tempVar);
+        telemetryM.addData("Velocity:", motors.getVelocity());
         telemetryM.update();
         telemetry.update();
     }

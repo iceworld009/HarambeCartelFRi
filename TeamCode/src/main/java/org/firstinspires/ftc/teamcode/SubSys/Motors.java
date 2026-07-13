@@ -15,6 +15,7 @@ public class Motors {
     private static Motors instance;
     public static PIDFCoefficients MOTOR_VELO_PID = new PIDFCoefficients(9, 0, 0, 6.3);
     public double targetVelocity = 0;
+    public double nominalVoltage =13.0;
     private Motors(HardwareClass hw) {
         ramp = hw.ramp;
         ramp2 = hw.ramp2;
@@ -89,6 +90,14 @@ public class Motors {
     }
 
 
+    public void setCoefsMan(double p, double i, double d, double f, double voltage){
+        ramp.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        ramp2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        ramp.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER,new PIDFCoefficients(p, i, d,f * (nominalVoltage / voltage )));
+        ramp2.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER,new PIDFCoefficients(p, i, d,f * (nominalVoltage / voltage)));
+        ramp2.setDirection(DcMotorSimple.Direction.FORWARD);
+        ramp.setDirection(DcMotorSimple.Direction.REVERSE);
+    }
     public void setCoefsMan(double p, double i, double d, double f){
         ramp.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         ramp2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);

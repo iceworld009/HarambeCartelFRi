@@ -387,7 +387,7 @@ public class AutoFarRed extends OpMode {
         hold(0.25);
         selectioner.resetServos();
         motors.intakeOn();
-        motors.setCoefsMan(12, 0, 0, 3.5);
+        motors.setCoefsMan(12, 0, 0, 3.5, hardwareMap.voltageSensor.iterator().next().getVoltage());
         motors.setRampVelocityC((int) targetVelocity);
     }
 
