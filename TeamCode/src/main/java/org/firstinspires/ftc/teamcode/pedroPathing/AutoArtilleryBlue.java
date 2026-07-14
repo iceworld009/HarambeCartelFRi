@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.pedroPathing;
 import com.bylazar.telemetry.PanelsTelemetry;
 import com.bylazar.telemetry.TelemetryManager;
 import com.pedropathing.follower.Follower;
+import com.pedropathing.geometry.BezierCurve;
 import com.pedropathing.geometry.BezierLine;
 import com.pedropathing.geometry.Pose;
 import com.pedropathing.paths.PathChain;
@@ -26,29 +27,29 @@ public class AutoArtilleryBlue extends OpMode {
 
     private static final int REP = 3000;                    // max poll iterations while ramping flywheel
     private static final int TELEMETRY_UPDATE_INTERVAL = 50; // only push telemetry every N iterations
-    private static final double DEFAULT_TARGET_VELOCITY = 2600; // TODO: retune for this game
+    private static final double DEFAULT_TARGET_VELOCITY = 2550; // TODO: retune for this game
 
     private static final double PRELOAD_RAMP_THRESHOLD = -110; // TODO: retune
     private static final double STANDARD_RAMP_THRESHOLD = -50; // TODO: retune
     private static final int TURRET_THREAD_PERIOD_MS = 10;
 
     private static final int MIN_ARTILLERY_CYCLES = 3;
-    private static final int MAX_ARTILLERY_CYCLES = 5;
+    private static final int MAX_ARTILLERY_CYCLES = 6;
     private static final double ARTILLERY_TIME_CUTOFF_S = 28.0;
-    private final Pose startPose = new Pose(0, 0, Math.toRadians(0)); // TODO: heading unknown
-    private final Pose shootGeneric = new Pose(0, 0, Math.toRadians(180));
-    private final Pose line1Pose = new Pose(0, 0, Math.toRadians(180));       // prima linie
-    private final Pose line1_3Pose = new Pose(0, 0, Math.toRadians(180));       // prima linie
-    private final Pose line2Pose = new Pose(0, 0, Math.toRadians(180));       // a doua linie
-    private final Pose line2_3Pose = new Pose(0, 0, Math.toRadians(180));       // a doua linie
-
-    private final Pose line3Pose = new Pose(0, 0, Math.toRadians(180));       // a treia linie
-    private final Pose auxTwoPose = new Pose(0, 0, Math.toRadians(180));      // aux_doi
-    private final Pose auxThreePose = new Pose(0, 0, Math.toRadians(180));    // aux_trei
-    private final Pose shootArtilleryPose = new Pose(0, 0, Math.toRadians(233));
-    private final Pose pickupPose = new Pose(0, 0, Math.toRadians(233));
-    private final Pose parkPose = new Pose(0, 0, Math.toRadians(233));
-
+    private final Pose startPose = new Pose(58.8, -118.6, Math.toRadians(312.5));
+    private final Pose shootGeneric = new Pose(49, -72, Math.toRadians(180));
+    private final Pose line1Pose = new Pose(42, -82.5, Math.toRadians(180));       // prima linie
+    private final Pose line1_3Pose = new Pose(19, -82.5, Math.toRadians(180));       // prima linie
+    private final Pose line2Pose = new Pose(42, -59, Math.toRadians(180));       // a doua linie
+    private final Pose line2_3Pose = new Pose(19, -59, Math.toRadians(180));       // a doua linie
+    private final Pose line3Pose = new Pose(42, -36, Math.toRadians(180));       // a treia linie
+    private final Pose line3_3Pose = new Pose(15, -36, Math.toRadians(180));
+    private final Pose auxOnePose = new Pose(60,-82,Math.toRadians(180));
+    private final Pose auxTwoPose = new Pose(60, -60, Math.toRadians(180));      // aux_doi
+    private final Pose auxThreePose = new Pose(60, -60, Math.toRadians(180));    // aux_trei
+    private final Pose shootArtilleryPose = new Pose(48, -84, Math.toRadians(220));
+    private final Pose pickupPose = new Pose(17, -127, Math.toRadians(220));
+    private final Pose parkPose = new Pose(17, -127, Math.toRadians(220));
     private DcMotor FR, FL, BR, BL;
     private Follower follower;
     private Servos servos;
@@ -76,99 +77,112 @@ public class AutoArtilleryBlue extends OpMode {
     private double error;
     private double targetVelocity = DEFAULT_TARGET_VELOCITY;
 
-    private PathChain toShootGeneric;
-    private PathChain shootGenericToLine1, line1ToShootGeneric;
-    private PathChain shootGenericToAuxTwo, auxTwoToLine2, line2ToShootGeneric;
-    private PathChain shootGenericToAuxThree, auxThreeToLine3, line3ToShootArtillery;
-    private PathChain shootArtilleryToPickup, pickupToShootArtillery;
-    private PathChain shootArtilleryToPark;
+    private PathChain scorePreload;
+    private PathChain grabLine1, scoreLine1;
+    private PathChain grabLine2, shootLine2;
+    private PathChain grabLine3, shootLine3;
+    private PathChain grabPickup, shootPickup;
+    private PathChain parkRobot;
 
     public void buildPaths() {
-        toShootGeneric = follower.pathBuilder()
+        scorePreload = follower.pathBuilder()
                 .addPath(new BezierLine(startPose, shootGeneric))
                 .setLinearHeadingInterpolation(startPose.getHeading(), shootGeneric.getHeading())
+                .addParametricCallback(0.1, () ->
+                {
+                    selectioner.resetServos();
+                    startPresiune();
+                    PoseStorage.autoPose = follower.getPose();
+                })
                 .setGlobalDeceleration(0.6)
                 .build();
 
-        shootGenericToLine1 = follower.pathBuilder()
+        grabLine1 = follower.pathBuilder()
                 .addPath(new BezierLine(shootGeneric, line1Pose))
-                .setLinearHeadingInterpolation(shootGeneric.getHeading(), line1Pose.getHeading())
+                .setLinearHeadingInterpolation(shootGeneric.getHeading(), line1Pose.getHeading(),0.6)
                 .addParametricCallback(0, () -> {
                     motors.intakeOn();
                     selectioner.resetServos();
                 })
-                .setGlobalDeceleration(0.6)
+                .addPath(new BezierLine(line1Pose,line1_3Pose))
+                .setLinearHeadingInterpolation(line1Pose.getHeading(),line1_3Pose.getHeading())
+                .setGlobalDeceleration(0.5)
                 .build();
 
-        line1ToShootGeneric = follower.pathBuilder()
-                .addPath(new BezierLine(line1Pose, shootGeneric))
-                .setLinearHeadingInterpolation(line1Pose.getHeading(), shootGeneric.getHeading())
-                .setGlobalDeceleration(0.6)
-                .build();
-
-        shootGenericToAuxTwo = follower.pathBuilder()
-                .addPath(new BezierLine(shootGeneric, auxTwoPose))
-                .setLinearHeadingInterpolation(shootGeneric.getHeading(), auxTwoPose.getHeading())
-                .setGlobalDeceleration(0.6)
-                .build();
-
-        auxTwoToLine2 = follower.pathBuilder()
-                .addPath(new BezierLine(auxTwoPose, line2Pose))
-                .setLinearHeadingInterpolation(auxTwoPose.getHeading(), line2Pose.getHeading())
-                .addParametricCallback(0, () -> {
-                    motors.intakeOn();
-                    selectioner.resetServos();
+        scoreLine1 = follower.pathBuilder()
+                .addPath(new BezierCurve(line1_3Pose, auxOnePose, shootGeneric))
+                .setLinearHeadingInterpolation(line1_3Pose.getHeading(),shootGeneric.getHeading())
+                .addParametricCallback(0,() -> {
+                    startPresiune();
+                    motors.intakeReverse();
+                })
+                .addParametricCallback(0.9, () -> {
+                    motors.intakeOff();
                 })
                 .setGlobalDeceleration(0.6)
                 .build();
 
-        line2ToShootGeneric = follower.pathBuilder()
-                .addPath(new BezierLine(line2Pose, shootGeneric))
-                .setLinearHeadingInterpolation(line2Pose.getHeading(), shootGeneric.getHeading())
-                .setGlobalDeceleration(0.6)
-                .build();
-
-        shootGenericToAuxThree = follower.pathBuilder()
-                .addPath(new BezierLine(shootGeneric, auxThreePose))
-                .setLinearHeadingInterpolation(shootGeneric.getHeading(), auxThreePose.getHeading())
-                .setGlobalDeceleration(0.6)
-                .build();
-
-        auxThreeToLine3 = follower.pathBuilder()
-                .addPath(new BezierLine(auxThreePose, line3Pose))
-                .setLinearHeadingInterpolation(auxThreePose.getHeading(), line3Pose.getHeading())
+        grabLine2 = follower.pathBuilder()
+                .addPath(new BezierCurve(shootGeneric,auxTwoPose, line2Pose))
+                .setLinearHeadingInterpolation(shootGeneric.getHeading(), line2Pose.getHeading(),0.8)
                 .addParametricCallback(0, () -> {
                     motors.intakeOn();
                     selectioner.resetServos();
                 })
+                .addPath(new BezierLine(line2Pose,line2_3Pose))
+                .setLinearHeadingInterpolation(line2Pose.getHeading(),line2_3Pose.getHeading())
+                .setGlobalDeceleration(0.5)
+                .build();
+
+        shootLine2 = follower.pathBuilder()
+                .addPath(new BezierCurve(line2_3Pose, auxTwoPose, shootGeneric))
+                .setLinearHeadingInterpolation(line2_3Pose.getHeading(),shootGeneric.getHeading())
+                .addParametricCallback(0.25,() -> {
+                    motors.intakeReverse();
+                    startPresiune();
+                })
                 .setGlobalDeceleration(0.6)
                 .build();
 
-        line3ToShootArtillery = follower.pathBuilder()
-                .addPath(new BezierLine(line3Pose, shootArtilleryPose))
-                .setLinearHeadingInterpolation(line3Pose.getHeading(), shootArtilleryPose.getHeading())
-                .addParametricCallback(0.5, () -> motors.intakeReverse())
+        grabLine3 = follower.pathBuilder()
+                .addPath(new BezierCurve(shootGeneric, auxThreePose, line3Pose))
+                .setLinearHeadingInterpolation(shootGeneric.getHeading(), line3Pose.getHeading(),0.8)
+                .addParametricCallback(0, () -> {
+                    motors.intakeOn();
+                    selectioner.resetServos();
+                })
+                .addPath(new BezierLine(line3Pose,line3_3Pose))
+                .setLinearHeadingInterpolation(line3Pose.getHeading(),line3_3Pose.getHeading())
+                .setGlobalDeceleration(0.5)
+                .build();
+
+        shootLine3 = follower.pathBuilder()
+                .addPath(new BezierCurve(line3_3Pose, auxThreePose, shootArtilleryPose))
+                .setLinearHeadingInterpolation(line3_3Pose.getHeading(), shootArtilleryPose.getHeading())
+                .addParametricCallback(0.2, () -> motors.intakeReverse())
                 .setGlobalDeceleration(0.6)
                 .build();
 
-        shootArtilleryToPickup = follower.pathBuilder()
+        grabPickup = follower.pathBuilder()
                 .addPath(new BezierLine(shootArtilleryPose, pickupPose))
-                .setLinearHeadingInterpolation(shootArtilleryPose.getHeading(), pickupPose.getHeading())
+                .setLinearHeadingInterpolation(shootArtilleryPose.getHeading(),pickupPose.getHeading())
                 .addParametricCallback(0, () -> {
                     motors.intakeOn();
                     selectioner.resetServos();
                 })
-                .setGlobalDeceleration(0.6)
+                .setGlobalDeceleration(0.5)
                 .build();
 
-        pickupToShootArtillery = follower.pathBuilder()
+        shootPickup = follower.pathBuilder()
                 .addPath(new BezierLine(pickupPose, shootArtilleryPose))
                 .setLinearHeadingInterpolation(pickupPose.getHeading(), shootArtilleryPose.getHeading())
-                .addParametricCallback(0.5, () -> motors.intakeReverse())
+                .addParametricCallback(0.15, () -> startPresiune())
+                .addParametricCallback(0.2, () -> motors.intakeReverse())
+                .addParametricCallback(0.75, () -> motors.intakeOff())
                 .setGlobalDeceleration(0.6)
                 .build();
 
-        shootArtilleryToPark = follower.pathBuilder()
+        parkRobot = follower.pathBuilder()
                 .addPath(new BezierLine(shootArtilleryPose, parkPose))
                 .setLinearHeadingInterpolation(shootArtilleryPose.getHeading(), parkPose.getHeading())
                 .setGlobalDeceleration(0.6)
@@ -203,77 +217,75 @@ public class AutoArtilleryBlue extends OpMode {
         switch (pathState) {
 
             case 0:
-                follower.followPath(toShootGeneric, true);
+                follower.followPath(scorePreload, true);
                 setPathState(1);
                 break;
 
             case 1:
                 if (!follower.isBusy()) {
-                    startPresiune();
                     waitForRampThenStop(PRELOAD_RAMP_THRESHOLD);
                     setPathState(2);
                 }
                 break;
 
             case 2:
-                follower.followPath(shootGenericToLine1, true);
-                setPathState(3);
-                break;
+                if (!follower.isBusy()) {
+                    follower.followPath(grabLine1, true);
+                    setPathState(3);
+                    break;
+                }
 
             case 3:
-                follower.followPath(line1ToShootGeneric, true);
-                setPathState(4);
-                break;
+                if (!follower.isBusy()) {
+                    follower.followPath(scoreLine1, true);
+                    setPathState(4);
+                    break;
+                }
 
             case 4:
                 if (!follower.isBusy()) {
-                    startPresiune();
                     waitForRampThenStop(STANDARD_RAMP_THRESHOLD);
-                    setPathState(5);
+                    setPathState(6);
                 }
-                break;
-
-            case 5:
-                follower.followPath(shootGenericToAuxTwo, true);
-                setPathState(6);
                 break;
 
             case 6:
-                follower.followPath(auxTwoToLine2, true);
-                setPathState(7);
-                break;
+                if (!follower.isBusy()) {
+                    follower.followPath(grabLine2, true);
+                    setPathState(7);
+                    break;
+                }
 
             case 7:
-                follower.followPath(line2ToShootGeneric, true);
-                setPathState(8);
-                break;
+                if (!follower.isBusy()) {
+                    follower.followPath(shootLine2, true);
+                    setPathState(8);
+                    break;
+                }
 
             case 8:
                 if (!follower.isBusy()) {
-                    startPresiune();
                     waitForRampThenStop(STANDARD_RAMP_THRESHOLD);
-                    setPathState(9);
+                    setPathState(13); // skips to 13
                 }
                 break;
 
-            case 9:
-                follower.followPath(shootGenericToAuxThree, true);
-                setPathState(10);
-                break;
-
             case 10:
-                follower.followPath(auxThreeToLine3, true);
-                setPathState(11);
-                break;
+                if (!follower.isBusy()) {
+                    follower.followPath(grabLine3, true);
+                    setPathState(11);
+                    break;
+                }
 
             case 11:
-                follower.followPath(line3ToShootArtillery, true);
-                setPathState(12);
-                break;
+                if (!follower.isBusy()) {
+                    follower.followPath(shootLine3, true);
+                    setPathState(12);
+                    break;
+                }
 
             case 12:
                 if (!follower.isBusy()) {
-                    startPresiune();
                     waitForRampThenStop(STANDARD_RAMP_THRESHOLD);
                     artilleryCycle = 0;
                     setPathState(13);
@@ -281,18 +293,21 @@ public class AutoArtilleryBlue extends OpMode {
                 break;
 
             case 13:
-                follower.followPath(shootArtilleryToPickup, true);
-                setPathState(14);
-                break;
+                if (!follower.isBusy()) {
+                    follower.followPath(grabPickup, true);
+                    setPathState(14);
+                    break;
+                }
 
             case 14:
-                follower.followPath(pickupToShootArtillery, true);
-                setPathState(15);
-                break;
+                if (!follower.isBusy()) {
+                    follower.followPath(shootPickup, true);
+                    setPathState(15);
+                    break;
+                }
 
             case 15:
                 if (!follower.isBusy()) {
-                    startPresiune();
                     waitForRampThenStop(STANDARD_RAMP_THRESHOLD);
                     artilleryCycle++;
 
@@ -305,9 +320,11 @@ public class AutoArtilleryBlue extends OpMode {
                 break;
 
             case 16:
-                follower.followPath(shootArtilleryToPark, true);
-                setPathState(17);
-                break;
+                if (!follower.isBusy()) {
+                    follower.followPath(parkRobot, true);
+                    setPathState(17);
+                    break;
+                }
 
             case 17:
                 if (!follower.isBusy()) {
@@ -325,8 +342,6 @@ public class AutoArtilleryBlue extends OpMode {
 
     @Override
     public void loop() {
-        follower.update();
-
         error = motors.getRampError();
 
         autonomousPathUpdate();
@@ -346,6 +361,7 @@ public class AutoArtilleryBlue extends OpMode {
             turretThreadRunning = true;
             turretThread = new Thread(() -> {
                 while (turretThreadRunning) {
+                    follower.update();
                     updatePosition();
                     if (target == 0 || target == 1 || target == 10) {
                         updateTurret();
@@ -442,7 +458,7 @@ public class AutoArtilleryBlue extends OpMode {
 
     public void startPresiune() {
         hold(0.32);
-        motors.intakeOn();
+        motors.intakeReverse();
         motors.setCoefsMan(12, 0, 0, 3.5, hardwareMap.voltageSensor.iterator().next().getVoltage());
         motors.setRampVelocityC((int) targetVelocity);
     }
@@ -450,10 +466,10 @@ public class AutoArtilleryBlue extends OpMode {
     public void stopPresiune() {
         PoseStorage.autoPose = follower.getPose();
         selectioner.unloadBalls();
+        motors.intakeOff();
         sleep(50);
         motors.setRampVelocityC((int) (0.33 * targetVelocity));
         sleep(100);
-        motors.intakeOff();
         hold(0);
     }
 

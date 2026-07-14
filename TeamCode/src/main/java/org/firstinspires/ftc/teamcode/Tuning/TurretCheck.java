@@ -6,6 +6,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.HardwareClass;
 import org.firstinspires.ftc.teamcode.SubSys.Turret;
@@ -14,33 +15,32 @@ import org.firstinspires.ftc.teamcode.SubSys.Turret;
 @Config
 public class TurretCheck extends OpMode {
 
-    public DcMotorEx motor = null;
-    public DcMotorEx FR = null;
-    public static String motorName = "Ramp2";
-    public static String FR_Name = "FR";
-
-    public static double kp = 0.01, ki = 0, kd = 0.001;
-    public static double target = 0;
-
     Turret turret = null;
-    public static double Position = 0;
     public static double adjust = 0;
+    ElapsedTime timer = new ElapsedTime();
+
 
     @Override
     public void init() {
-        this.motor = hardwareMap.get(DcMotorEx.class, motorName);
-        this.motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        this.motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-
         turret = new Turret(new HardwareClass(hardwareMap),telemetry);
-        //turret.setup();
-        turret.resetMotor();
-    }
+        turret.setup();
+        turret.resetTurret();
+        turret.powerOn();
 
+    }
+    public void start(){
+        timer.reset();
+        turret.goToPosition(adjust);
+    }
     @Override
     public void loop() {
-        //motor.setPower(adjust);
-        telemetry.addData("Position", motor.getCurrentPosition());
+        if(Math.abs(turret.getPosition()-adjust)<1.5) {
+            telemetry.addData("Time:", timer.milliseconds());
+            telemetry.update();
+            while(true){}
+        }
+        telemetry.addData("Position:",turret.getPosition());
+        telemetry.addData("Error:",Math.abs(turret.getPosition()-adjust)<1.5);
         telemetry.update();
     }
 }

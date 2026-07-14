@@ -14,9 +14,9 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 
 public class Constants {
     public static FollowerConstants followerConstants = new FollowerConstants()
-            .mass(15.2)
-            .forwardZeroPowerAcceleration(-32.82)
-            .lateralZeroPowerAcceleration(-74.5)
+            .mass(14.7)
+            .forwardZeroPowerAcceleration(-31.2167)
+            .lateralZeroPowerAcceleration(-69.7413)
             .translationalPIDFCoefficients(new PIDFCoefficients(
                     0.015,
                     0,
@@ -68,8 +68,8 @@ public class Constants {
             .leftRearMotorDirection(DcMotorSimple.Direction.REVERSE)
             .rightFrontMotorDirection(DcMotorSimple.Direction.FORWARD)
             .rightRearMotorDirection(DcMotorSimple.Direction.FORWARD)
-            .xVelocity(73)
-            .yVelocity(55.3);
+            .xVelocity(73.065657)
+            .yVelocity(55.6540);
 
     public static PinpointConstants localizerConstants = new PinpointConstants()
             .forwardPodY(-6.67)
@@ -87,13 +87,13 @@ public class Constants {
 
     public static PathConstraints pathConstraints = new PathConstraints(
             0.994,
-            0.4,
+            0.45,
             0.08,
             0.009,
             40,
             1.05,
             10,
-            2
+            1.9
     );
 
     //Add custom localizers or drivetrains here

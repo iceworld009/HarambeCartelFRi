@@ -32,25 +32,25 @@ public class AutoFarBlue extends OpMode {
     /** needs adjustment !!!
      *  try to rise and lower the rpm in magnitude of 25 rpm +-
      */
-    private static final double DEFAULT_TARGET_VELOCITY = 3720;  //3900 +-
+    private static final double DEFAULT_TARGET_VELOCITY = 3600;  //3900 +-
 
 
     private static final double PRELOAD_RAMP_THRESHOLD = -60;
     private static final double STANDARD_RAMP_THRESHOLD = -80;
 
     private static final int PIPELINE_PRESEEK = 1;
-    private static final int PIPELINE_AIM = 4;
+    private static final int PIPELINE_AIM = 0;
 
-    private static final double AIM_X_OFFSET = 8;
+    private static final double AIM_X_OFFSET = 5;
 
     private static final int POST_SHOT_SLEEP_MS = 100;
     private static final int TURRET_THREAD_PERIOD_MS = 10;
 
-    private final Pose startPose = new Pose(58, 9, Math.toRadians(90));
-    private final Pose scorePose = new Pose(58, 17, Math.toRadians(180));
+    private final Pose startPose = new Pose(57, 9, Math.toRadians(90));
+    private final Pose scorePose = new Pose(57, 17, Math.toRadians(180));
     private final Pose pickupScore1 = new Pose(43, 34, Math.toRadians(180));
     private final Pose pickupScore1_3 = new Pose(19, 34, Math.toRadians(180));
-    private final Pose pickupPose2_2 = new Pose(20, 16, Math.toRadians(165));
+    private final Pose pickupPose2_2 = new Pose(19, 16, Math.toRadians(170));
 
     // Hardware
     private DcMotor FR, FL, BR, BL;

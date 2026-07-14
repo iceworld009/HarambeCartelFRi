@@ -9,9 +9,10 @@ public enum Geometry {
         if(color == 0){//red
             distance = Math.sqrt(Math.pow(HardwareClass.redX-x,2)+Math.pow(HardwareClass.redY-y,2));
         }
-        else
+        else if(color == 1)
             distance = Math.sqrt(Math.pow(HardwareClass.blueX-x,2)+Math.pow(HardwareClass.blueY-y,2));
-
+        else
+            distance = Math.sqrt(Math.pow(HardwareClass.autoArtilleryScorePoseX-x,2) + Math.pow(HardwareClass.blueY-y,2));
         return distance * 2.54; //cm
     }
 

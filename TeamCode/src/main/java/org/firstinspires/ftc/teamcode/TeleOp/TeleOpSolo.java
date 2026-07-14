@@ -55,7 +55,7 @@ public class TeleOpSolo extends LinearOpMode {
     ElapsedTime temp = new ElapsedTime();
     double tempVar = 0;
 
-    boolean prevRightBumper, prevLeftBumper, prevX, prevDpadUp, prevDpadLeft, prevDpadRight;
+    boolean prevRightBumper, prevLeftBumper, prevX, prevDpadUp, prevDpadLeft, prevDpadRight,prevDpadDown;
 
     public void runOpMode() {
         // Phase 1
@@ -150,13 +150,13 @@ public class TeleOpSolo extends LinearOpMode {
                 } else if (gamepad1.left_stick_button) {
                     target = 0;
                 } else if (gamepad1.ps) {
-                    target = 10;
+                    target = 3;
                 }
 
                 if (gamepad1.dpad_up && !prevDpadUp) {
                     target = -1;
                     turret.resetTurret();
-                    target = 10;
+                    target = 3;
                 }
                 if (gamepad1.dpad_left && !prevDpadLeft)
                     follower.setPose(PoseStorage.bluePose);
@@ -164,12 +164,16 @@ public class TeleOpSolo extends LinearOpMode {
                 if (gamepad1.dpad_right && !prevDpadRight)
                     follower.setPose(PoseStorage.redPose);
 
+                if(gamepad1.dpad_down && !prevDpadDown)
+                    follower.setPose(PoseStorage.resetPose);
+
                 prevX = gamepad1.x;
                 prevRightBumper = gamepad1.right_bumper;
                 prevLeftBumper = gamepad1.left_bumper;
                 prevDpadUp = gamepad1.dpad_up;
                 prevDpadLeft = gamepad1.dpad_left;
                 prevDpadRight = gamepad1.dpad_right;
+                prevDpadDown = gamepad1.dpad_down;
             }
         } finally {
             stopUpdate();
@@ -190,7 +194,7 @@ public class TeleOpSolo extends LinearOpMode {
             updateTurret = new Thread(() -> {
                 while (turretThreadRunning) {
                     updatePosition();
-                    if (target == 0 || target == 1 || target == 10) {
+                    if (target == 0 || target == 1 || target == 3) {
                         updateTurret();
                     }
                     sleep(TURRET_THREAD_PERIOD_MS);
@@ -222,9 +226,9 @@ public class TeleOpSolo extends LinearOpMode {
         } else if (target == 0) {
             dx = HardwareClass.redX - x;
             dy = HardwareClass.redY - y;
-        } else if (target == 10) {
-            dx = HardwareClass.tagPosX - x;
-            dy = HardwareClass.tagPosY - y;
+        } else if (target == 3) {
+            dx = HardwareClass.autoArtilleryScorePoseX - x;
+            dy = HardwareClass.autoArtilleryScorePoseY - y;
         }
 
         double goalAngle = Math.atan2(dy, dx);
