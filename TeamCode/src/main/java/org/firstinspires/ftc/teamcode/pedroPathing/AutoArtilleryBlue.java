@@ -26,7 +26,7 @@ import org.firstinspires.ftc.teamcode.PoseStorage;
 public class AutoArtilleryBlue extends OpMode {
     private static final int REP = 3000;                    // max poll iterations while ramping flywheel
     private static final int TELEMETRY_UPDATE_INTERVAL = 50; // only push telemetry every N iterations
-    private static final double DEFAULT_TARGET_VELOCITY = 2870; // TODO: retune for this game
+    private static final double DEFAULT_TARGET_VELOCITY = 2915; // TODO: retune for this game
 
     private static final double PRELOAD_RAMP_THRESHOLD = -150; // TODO: retune
     private static final double STANDARD_RAMP_THRESHOLD = -50; // TODO: retune
@@ -35,7 +35,7 @@ public class AutoArtilleryBlue extends OpMode {
     private static final int MIN_ARTILLERY_CYCLES = 3;
     private static final int MAX_ARTILLERY_CYCLES = 4;
     private static final double ARTILLERY_TIME_CUTOFF_S = 27;
-    private static final double OFFSET_X = -5.5;
+    private static final double OFFSET_X = -7.75;
     private final Pose startPose = new Pose(57.38, -117.35, Math.toRadians(215.79));
     private final Pose shootGeneric = new Pose(49, -72, Math.toRadians(180));
     private final Pose line1Pose = new Pose(42, -82.5, Math.toRadians(180));       // prima linie
@@ -316,7 +316,7 @@ public class AutoArtilleryBlue extends OpMode {
 
             case 13:
                 if (!follower.isBusy()) {
-                    servos.hoodSetPos(0.24);
+                    servos.hoodSetPos(0.36);
                     follower.followPath(grabPickup2, true);
                     setPathState(15);
                     break;
@@ -470,7 +470,7 @@ public class AutoArtilleryBlue extends OpMode {
 
         follower.setStartingPose(startPose);
         motors.setRampCoefs();
-        servos.hoodSetPos(0.3);
+        servos.hoodSetPos(0.4);
     }
 
     @Override
@@ -500,7 +500,7 @@ public class AutoArtilleryBlue extends OpMode {
     public void startPresiune() {
         hold(0.32);
         motors.intakeReverse();
-        motors.setCoefsMan(12, 0, 0, 3.7, hardwareMap.voltageSensor.iterator().next().getVoltage());
+        motors.setCoefsMan(12.5, 0, 0, 4.5, hardwareMap.voltageSensor.iterator().next().getVoltage());
         motors.setRampVelocityC((int) targetVelocity);
     }
 

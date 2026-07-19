@@ -46,6 +46,7 @@ public class TeleOpSolo extends LinearOpMode {
     Thread updateTurret;
     private volatile boolean turretThreadRunning = false;
 
+
     double targetVelocity, distance, error, targetPosition;
     volatile double x, y;
     volatile int target;
@@ -104,15 +105,15 @@ public class TeleOpSolo extends LinearOpMode {
                     check.reset();
                 }
 
-//                if(temp.milliseconds()>300){
-//                    if(gamepad1.a){
-//                        tempVar -= 30;
-//                    }
-//                    if(gamepad1.y){
-//                        tempVar += 30;
-//                    }
-//                    temp.reset();
-//                }
+                if(temp.milliseconds()>300){
+                    if(gamepad1.a){
+                        tempVar -= 30;
+                    }
+                    if(gamepad1.y){
+                        tempVar += 30;
+                    }
+                    temp.reset();
+                }
 
                 if (motors.getRampError() > SHOOT_DONE_RAMP_ERROR && isShooting) {
                     selectioner.unloadBalls();
@@ -172,6 +173,8 @@ public class TeleOpSolo extends LinearOpMode {
                 if(gamepad1.dpad_down && !prevDpadDown)
                     follower.setPose(PoseStorage.resetPose);
 
+                if(gamepad1.b)
+                    follower.setPose(PoseStorage.resetPurpleRed);
                 prevX = gamepad1.x;
                 prevRightBumper = gamepad1.right_bumper;
                 prevLeftBumper = gamepad1.left_bumper;

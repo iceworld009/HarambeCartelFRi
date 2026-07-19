@@ -24,10 +24,9 @@ import org.firstinspires.ftc.teamcode.PoseStorage;
 
 @Autonomous(name = "Auto artillery Red", group = "Test")
 public class AutoArtilleryRed extends OpMode {
-
     private static final int REP = 3000;                    // max poll iterations while ramping flywheel
     private static final int TELEMETRY_UPDATE_INTERVAL = 50; // only push telemetry every N iterations
-    private static final double DEFAULT_TARGET_VELOCITY = 2850; // TODO: retune for this game
+    private static final double DEFAULT_TARGET_VELOCITY = 2915; // TODO: retune for this game
 
     private static final double PRELOAD_RAMP_THRESHOLD = -150; // TODO: retune
     private static final double STANDARD_RAMP_THRESHOLD = -50; // TODO: retune
@@ -36,7 +35,7 @@ public class AutoArtilleryRed extends OpMode {
     private static final int MIN_ARTILLERY_CYCLES = 3;
     private static final int MAX_ARTILLERY_CYCLES = 4;
     private static final double ARTILLERY_TIME_CUTOFF_S = 27;
-    private static final double OFFSET_X = 5.5;
+    private static final double OFFSET_X = 9;
     private final Pose startPose = new Pose(86.62, -117.35, Math.toRadians(329.92));
     private final Pose shootGeneric = new Pose(95, -72, Math.toRadians(0));
     private final Pose line1Pose = new Pose(102, -82.5, Math.toRadians(0));       // prima linie
@@ -44,14 +43,14 @@ public class AutoArtilleryRed extends OpMode {
     private final Pose line2Pose = new Pose(102, -59, Math.toRadians(0));       // a doua linie
     private final Pose line2_3Pose = new Pose(124.3, -59, Math.toRadians(0));       // a doua linie
     private final Pose line3Pose = new Pose(102, -36, Math.toRadians(0));       // a treia linie
-    private final Pose line3_3Pose = new Pose(129, -36, Math.toRadians(0));
+    private final Pose line3_3Pose = new Pose(15, -36, Math.toRadians(0));
     private final Pose auxOnePose = new Pose(94,-82,Math.toRadians(0));
     private final Pose auxTwoPose = new Pose(94, -60, Math.toRadians(0));      // aux_doi
     private final Pose auxThreePose = new Pose(94, -60, Math.toRadians(0));    // aux_trei
     private final Pose controlPoint = new Pose(125,-83.5,0);
-    private final Pose shootArtilleryPose = new Pose(107, -84, Math.toRadians(270));
+    private final Pose shootArtilleryPose = new Pose(105, -84, Math.toRadians(270));
     private final Pose pickupPose = new Pose(120, -126.3, Math.toRadians(270));
-    private final Pose pickupPose2 = new Pose(135, -126.3, Math.toRadians(285));
+    private final Pose pickupPose2 = new Pose(135, -126.3, Math.toRadians(265));
     private final Pose parkPose = new Pose(122, -120, Math.toRadians(270));
     private DcMotor FR, FL, BR, BL;
     private Follower follower;
@@ -317,7 +316,7 @@ public class AutoArtilleryRed extends OpMode {
 
             case 13:
                 if (!follower.isBusy()) {
-                    servos.hoodSetPos(0.24);
+                    servos.hoodSetPos(0.34);
                     follower.followPath(grabPickup2, true);
                     setPathState(15);
                     break;
@@ -471,7 +470,7 @@ public class AutoArtilleryRed extends OpMode {
 
         follower.setStartingPose(startPose);
         motors.setRampCoefs();
-        servos.hoodSetPos(0.3);
+        servos.hoodSetPos(0.38);
     }
 
     @Override
@@ -501,7 +500,7 @@ public class AutoArtilleryRed extends OpMode {
     public void startPresiune() {
         hold(0.32);
         motors.intakeReverse();
-        motors.setCoefsMan(12, 0, 0, 3.7, hardwareMap.voltageSensor.iterator().next().getVoltage());
+        motors.setCoefsMan(12.5, 0, 0, 4.5, hardwareMap.voltageSensor.iterator().next().getVoltage());
         motors.setRampVelocityC((int) targetVelocity);
     }
 
