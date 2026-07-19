@@ -12,10 +12,11 @@ public class Motors {
 
     private DcMotorEx ramp,ramp2;
     public DcMotor intakeMotor;
+//    public static PIDFCoefficients MOTOR_VELO_PID = new PIDFCoefficients(12, 0, 0, 5.8);
+    public static PIDFCoefficients MOTOR_VELO_PID = new PIDFCoefficients(34, 0, 0, 2);
     private static Motors instance;
-    public static PIDFCoefficients MOTOR_VELO_PID = new PIDFCoefficients(9, 0, 0, 6.3);
     public double targetVelocity = 0;
-    public double nominalVoltage =13.0;
+    public double nominalVoltage = 13.0;
     private Motors(HardwareClass hw) {
         ramp = hw.ramp;
         ramp2 = hw.ramp2;
@@ -25,7 +26,6 @@ public class Motors {
         ramp.setDirection(DcMotorSimple.Direction.REVERSE);
         intakeMotor.setDirection(DcMotorSimple.Direction.REVERSE);
     }
-
 
     public void intakeOn() {
         intakeMotor.setPower(0.9);
@@ -68,7 +68,7 @@ public class Motors {
     }
 
     public void setRampCoefs(double voltage){
-        double nominalVoltage = 12.0;
+        double nominalVoltage = 13.0;
         ramp.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER,
                 new PIDFCoefficients(MOTOR_VELO_PID.p, MOTOR_VELO_PID.i, MOTOR_VELO_PID.d, MOTOR_VELO_PID.f * (nominalVoltage/voltage)));
 

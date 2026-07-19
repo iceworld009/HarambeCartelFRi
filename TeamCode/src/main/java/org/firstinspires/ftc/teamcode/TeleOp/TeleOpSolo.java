@@ -27,11 +27,11 @@ public class TeleOpSolo extends LinearOpMode {
 
     private static final int TURRET_THREAD_PERIOD_MS = 10;
     private static final int SHOT_RAMP_OVERSHOOT_RPM = 300;
-    private static final int SHOT_KICK_SLEEP_MS = 300;
-    private static final double SHOOT_DONE_RAMP_ERROR = -80;
+    private static final int SHOT_KICK_SLEEP_MS = 400;
+    private static final double SHOOT_DONE_RAMP_ERROR = -50;
     private static final int POST_SHOT_SLEEP_MS = 100;
-    private static final double IDLE_RPM = 1000;
-    private static final double IDLE_RAMP_ERROR_CEILING = 800;
+    private static final double IDLE_RPM = 1600;
+    private static final double IDLE_RAMP_ERROR_CEILING = 1000;
 
     HardwareClass hardwareClass;
     Motors motors;
@@ -53,7 +53,7 @@ public class TeleOpSolo extends LinearOpMode {
     boolean isShooting = false, canIdle = false;
     ElapsedTime check = new ElapsedTime();
     ElapsedTime temp = new ElapsedTime();
-    double tempVar = 0;
+    int tempVar = 0;
 
     boolean prevRightBumper, prevLeftBumper, prevX, prevDpadUp, prevDpadLeft, prevDpadRight,prevDpadDown;
 
@@ -93,6 +93,11 @@ public class TeleOpSolo extends LinearOpMode {
                 distance = getDistanceOD(x, y, target);
                 error = motors.getRampError();
                 targetVelocity = getRPM(distance);
+
+                if(distance > 300)
+                    servos.hoodSetPos(0.55);
+                else if(y<0) servos.hoodSetPos(0.2);
+                else servos.hoodSetPos(0.3);
 
                 if (check.milliseconds() > 60) {
                     updateTelemetry();
@@ -134,9 +139,9 @@ public class TeleOpSolo extends LinearOpMode {
                 if (gamepad1.right_bumper && !prevRightBumper) {
                     isShooting = true;
                     canIdle = true;
-                    motors.setRampVelocityC((getRPM(distance) + SHOT_RAMP_OVERSHOOT_RPM));
+                    motors.setRampVelocityC((getRPM(distance) + SHOT_RAMP_OVERSHOOT_RPM + tempVar));
                     sleep(SHOT_KICK_SLEEP_MS);
-                    motors.setRampVelocityC( getRPM(distance));
+                    motors.setRampVelocityC( getRPM(distance) + tempVar);
                 }
 
                 if (gamepad1.left_bumper && !prevLeftBumper) {
@@ -249,7 +254,6 @@ public class TeleOpSolo extends LinearOpMode {
         );
         turret.goToPosition(targetPosition);
     }
-
     double getTurretError() {
         return turret.getPosition() - targetPosition;
     }
@@ -259,6 +263,13 @@ public class TeleOpSolo extends LinearOpMode {
         BotPose = follower.getPose();
         x = BotPose.getX();
         y = BotPose.getY();
+
+    }
+
+    double getRandomSpeed(){
+        double valRand = Math.random();
+        return valRand % 100 / 100.0;
+        /* TODO: If you have time, its fun ;;;))) */
     }
 
     void updateTelemetry() {

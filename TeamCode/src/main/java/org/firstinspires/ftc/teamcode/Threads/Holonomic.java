@@ -56,10 +56,10 @@ public class Holonomic {
                         BLPower = power * sin/max + turn;
                         BRPower = power * cos/max - turn;
 
-                        FL.setPower(FLPower + totalPower + 0.12);
-                        FR.setPower(FRPower + totalPower + 0.12);
-                        BL.setPower(BLPower + totalPower - 0.12);
-                        BR.setPower(BRPower + totalPower - 0.12);
+                        FL.setPower(FLPower + totalPower + 0.09);
+                        FR.setPower(FRPower + totalPower + 0.09);
+                        BL.setPower(BLPower + totalPower - 0.09);
+                        BR.setPower(BRPower + totalPower - 0.09);
                     }
                 }
             });

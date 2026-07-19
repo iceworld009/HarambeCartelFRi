@@ -51,6 +51,7 @@ public class Tuning extends SelectableOpMode {
         super("Select a Tuning OpMode", s -> {
             s.folder("Localization", l -> {
                 l.add("Localization Test", LocalizationTest::new);
+                l.add("Offsets Tuner", OffsetsTuner::new);
                 l.add("Forward Tuner", ForwardTuner::new);
                 l.add("Lateral Tuner", LateralTuner::new);
                 l.add("Turn Tuner", TurnTuner::new);
@@ -890,12 +891,14 @@ class DriveTuner extends OpMode {
         forwards = follower.pathBuilder()
                 .setGlobalDeceleration()
                 .addPath(new BezierLine(new Pose(0,0), new Pose(DISTANCE,0)))
+                .setLinearHeadingInterpolation(0,0)
                 .setConstantHeadingInterpolation(0)
                 .build();
 
         backwards = follower.pathBuilder()
                 .setGlobalDeceleration()
                 .addPath(new BezierLine(new Pose(DISTANCE,0), new Pose(0,0)))
+                .setLinearHeadingInterpolation(0,0)
                 .setConstantHeadingInterpolation(0)
                 .build();
 
@@ -988,6 +991,42 @@ class Line extends OpMode {
     }
 }
 
+class OffsetsTuner extends OpMode {
+    @Override
+    public void init() {
+        follower.setStartingPose(new Pose(72,72));
+        follower.update();
+        drawCurrent();
+    }
+
+    /** This initializes the PoseUpdater as well as the Panels telemetry. */
+    @Override
+    public void init_loop() {
+        telemetryM.debug("Prerequisite: Make sure both your offsets are set to 0 in your localizer constants.");
+        telemetryM.debug("Turn your robot " + Math.PI + " radians. Your offsets in inches will be shown on the telemetry.");
+        telemetryM.update(telemetry);
+
+        drawCurrent();
+    }
+
+    /**
+     * This updates the robot's pose estimate, and updates the Panels telemetry with the
+     * calculated offsets and draws the robot.
+     */
+    @Override
+    public void loop() {
+        follower.update();
+
+        telemetryM.debug("Total Angle: " + follower.getTotalHeading());
+
+        telemetryM.debug("The following values are the offsets in inches that should be applied to your localizer.");
+        telemetryM.debug("strafeX: " + ((72.0-follower.getPose().getX()) / 2.0));
+        telemetryM.debug("forwardY: " + ((72.0-follower.getPose().getY()) / 2.0));
+        telemetryM.update(telemetry);
+
+        drawCurrentAndHistory();
+    }
+}
 /**
  * This is the Centripetal Tuner OpMode. It runs the robot in a specified distance
  * forward and to the left. On reaching the end of the forward Path, the robot runs the backward

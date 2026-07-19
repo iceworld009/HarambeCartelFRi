@@ -31,8 +31,7 @@ public class AutoCloseRed extends OpMode {
 
     private static final int REP = 2650;                    // max poll iterations while ramping flywheel
     private static final int TELEMETRY_UPDATE_INTERVAL = 40; // only push telemetry every N iterations
-    private static final double DEFAULT_TARGET_VELOCITY = 2580;
-
+    private static final double DEFAULT_TARGET_VELOCITY = 2600; //2600
     private static final double PRELOAD_RAMP_THRESHOLD = -100;
     private static final double STANDARD_RAMP_THRESHOLD = -45;
     private static final double FINAL_RAMP_THRESHOLD = -60;
@@ -40,20 +39,21 @@ public class AutoCloseRed extends OpMode {
     private static final long UNLOAD_WAIT_STAGE1_MS = 1400;
     private static final long UNLOAD_WAIT_STAGE2_MS = 1100;
     private static final long UNLOAD_WAIT_STAGE3_MS = 1100;
-    private static final double OFFSET_Y = -5;
+    private static final int POST_UNLOAD_TIMER_MS = 600;
+    private static final double OFFSET_Y = 4;
 
     // Cutoff so the last shot doesn't run us out of auto time
     private static final double OPMODE_TIME_LIMIT_FINAL_S = 28.5;
 
     private final Pose startPose = new Pose(116.3, 130.85, Math.toRadians(42));
-    private final Pose scorePose = new Pose(87, 82, Math.toRadians(0));
-    private final Pose scorePose1 = new Pose(87, 82 , Math.toRadians(0)); // scorePose used only by turret
+    private final Pose scorePose = new Pose(89, 82, Math.toRadians(0));
+    private final Pose scorePose1 = new Pose(89, 82 , Math.toRadians(0)); // scorePose used only by turret
     private final Pose pickup1_3Pose = new Pose(119, 84, Math.toRadians(0));
     private final Pose pickup2Pose = new Pose(102, 62.25, Math.toRadians(0));
     private final Pose pickup2_3Pose = new Pose(126.5, 62.25, Math.toRadians(0));
     private final Pose parkPose = new Pose(108, 84, Math.toRadians(0));
-    private final Pose unloadPose = new Pose(135, 61.75, Math.toRadians(25));
-    private final Pose unloadPose2 = new Pose(135, 61.75, Math.toRadians(25));
+    private final Pose unloadPose = new Pose(135, 62, Math.toRadians(30));
+    private final Pose unloadPose2 = new Pose(135, 62, Math.toRadians(30));
     private final Pose aux = new Pose(81, 55, Math.toRadians(0));
     private final Pose aux_2 = new Pose(81, 55, Math.toRadians(0));
     // Hardware
@@ -275,6 +275,7 @@ public class AutoCloseRed extends OpMode {
 
             case 5:
                 if (!follower.isBusy() && unloadTimer.milliseconds() > UNLOAD_WAIT_STAGE1_MS) {
+                    sleep(POST_UNLOAD_TIMER_MS);
                     setPathState(7);
                 }
                 break;
@@ -445,7 +446,6 @@ public class AutoCloseRed extends OpMode {
         motors.intakeMotor.setDirection(DcMotorSimple.Direction.REVERSE);
 
         follower.setStartingPose(startPose);
-        motors.setRampCoefs();
         distance = getDistanceOD(follower.getPose().getX(), follower.getPose().getY(), target);
     }
 
@@ -473,7 +473,7 @@ public class AutoCloseRed extends OpMode {
 
     public void startPresiune() {
         hold(0.18);
-        motors.setCoefsMan(12, 0, 0, 3.5, hardwareMap.voltageSensor.iterator().next().getVoltage());
+        motors.setCoefsMan(18, 0, 0, 2, hardwareMap.voltageSensor.iterator().next().getVoltage());
         motors.setRampVelocityC((int) targetVelocity);
     }
 

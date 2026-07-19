@@ -31,29 +31,29 @@ public class AutoCloseBlue extends OpMode {
 
     private static final int REP = 2650;                    // max poll iterations while ramping flywheel
     private static final int TELEMETRY_UPDATE_INTERVAL = 40; // only push telemetry every N iterations
-    private static final double DEFAULT_TARGET_VELOCITY = 2630;
-
+    private static final double DEFAULT_TARGET_VELOCITY = 2810; //2600
     private static final double PRELOAD_RAMP_THRESHOLD = -100;
     private static final double STANDARD_RAMP_THRESHOLD = -45;
     private static final double FINAL_RAMP_THRESHOLD = -60;
 
-    private static final long UNLOAD_WAIT_STAGE1_MS = 1120;
-    private static final long UNLOAD_WAIT_STAGE2_MS = 900;
-    private static final long UNLOAD_WAIT_STAGE3_MS = 900;
-    private static final double OFFSET_Y = 3;
+    private static final long UNLOAD_WAIT_STAGE1_MS = 1400;
+    private static final long UNLOAD_WAIT_STAGE2_MS = 1100;
+    private static final long UNLOAD_WAIT_STAGE3_MS = 1100;
+    private static final int POST_UNLOAD_TIMER_MS = 600;
+    private static final double OFFSET_Y = 0;
 
     // Cutoff so the last shot doesn't run us out of auto time
     private static final double OPMODE_TIME_LIMIT_FINAL_S = 28.5;
 
     private final Pose startPose = new Pose(27.7, 130.85, Math.toRadians(138));
-    private final Pose scorePose = new Pose(57, 82, Math.toRadians(180));
-    private final Pose scorePose1 = new Pose(57, 82 , Math.toRadians(180)); // scorePose used only by turret
+    private final Pose scorePose = new Pose(55, 82, Math.toRadians(180));
+    private final Pose scorePose1 = new Pose(55, 82 , Math.toRadians(180)); // scorePose used only by turret
     private final Pose pickup1_3Pose = new Pose(25, 84, Math.toRadians(180));
     private final Pose pickup2Pose = new Pose(42, 62.25, Math.toRadians(180));
     private final Pose pickup2_3Pose = new Pose(17.5, 62.25, Math.toRadians(180));
     private final Pose parkPose = new Pose(36, 84, Math.toRadians(180));
-    private final Pose unloadPose = new Pose(9, 62, Math.toRadians(153));
-    private final Pose unloadPose2 = new Pose(9, 62, Math.toRadians(153));
+    private final Pose unloadPose = new Pose(9, 62.15, Math.toRadians(150));
+    private final Pose unloadPose2 = new Pose(9, 62.15, Math.toRadians(150));
     private final Pose aux = new Pose(63, 55, Math.toRadians(180));
     private final Pose aux_2 = new Pose(63, 55, Math.toRadians(180));
     // Hardware
@@ -75,12 +75,10 @@ public class AutoCloseBlue extends OpMode {
     private int target = 0;
     private boolean isResetTurret = true;
     private int possibleGreenPos = -1;
-    private double shoots = 0;
 
     private double targetAngle, targetPosition, distance;
     private double x, y;
     private Pose botPose;
-    private double error;
     private double targetVelocity = DEFAULT_TARGET_VELOCITY;
 
     private PathChain scorePreloadChain, grabFirst, grabFromRack, scoreFromRack,parkRobot;
@@ -277,6 +275,7 @@ public class AutoCloseBlue extends OpMode {
 
             case 5:
                 if (!follower.isBusy() && unloadTimer.milliseconds() > UNLOAD_WAIT_STAGE1_MS) {
+                    sleep(POST_UNLOAD_TIMER_MS);
                     setPathState(7);
                 }
                 break;
@@ -386,8 +385,7 @@ public class AutoCloseBlue extends OpMode {
         follower.update();
         updatePosition();
 
-        distance = getDistanceODMan(x, y, HardwareClass.autoRedScorePoseX, HardwareClass.autoRedScorePoseY);
-        error = motors.getRampError();
+        distance = getDistanceODMan(x, y, HardwareClass.autoBlueScorePoseX, HardwareClass.autoBlueScorePoseY);
 
         if (target != -1) {
             updateTurretFusion();
@@ -443,6 +441,7 @@ public class AutoCloseBlue extends OpMode {
 
         turret = new Turret(hardwareClass, telemetry);
         turret.setup();
+        turret.resetMotor();
         resetTurret();
         motors.intakeMotor.setDirection(DcMotorSimple.Direction.REVERSE);
 
@@ -475,7 +474,7 @@ public class AutoCloseBlue extends OpMode {
 
     public void startPresiune() {
         hold(0.18);
-        motors.setCoefsMan(12, 0, 0, 3.5, hardwareMap.voltageSensor.iterator().next().getVoltage());
+        motors.setCoefsMan(12, 0, 0, 3.7, hardwareMap.voltageSensor.iterator().next().getVoltage());
         motors.setRampVelocityC((int) targetVelocity);
     }
 

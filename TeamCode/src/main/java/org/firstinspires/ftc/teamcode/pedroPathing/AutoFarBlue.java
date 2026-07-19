@@ -32,26 +32,25 @@ public class AutoFarBlue extends OpMode {
     /** needs adjustment !!!
      *  try to rise and lower the rpm in magnitude of 25 rpm +-
      */
-    private static final double DEFAULT_TARGET_VELOCITY = 3600;  //3900 +-
+    private static final double DEFAULT_TARGET_VELOCITY = 3525;  //3900 +-
 
 
     private static final double PRELOAD_RAMP_THRESHOLD = -60;
     private static final double STANDARD_RAMP_THRESHOLD = -80;
 
     private static final int PIPELINE_PRESEEK = 1;
-    private static final int PIPELINE_AIM = 0;
+    private static final int PIPELINE_AIM = -4;
 
-    private static final double AIM_X_OFFSET = 5;
+    private static final double AIM_X_OFFSET = 9;
 
     private static final int POST_SHOT_SLEEP_MS = 100;
     private static final int TURRET_THREAD_PERIOD_MS = 10;
-
-    private final Pose startPose = new Pose(57, 9, Math.toRadians(90));
-    private final Pose scorePose = new Pose(57, 17, Math.toRadians(180));
-    private final Pose pickupScore1 = new Pose(43, 34, Math.toRadians(180));
-    private final Pose pickupScore1_3 = new Pose(19, 34, Math.toRadians(180));
-    private final Pose pickupPose2_2 = new Pose(19, 16, Math.toRadians(170));
-
+    private final Pose startPose = new Pose(83.56, 0.4, Math.toRadians(0));
+    private final Pose scorePose = new Pose(87, 17, Math.toRadians(0));
+    private final Pose pickupScore1 = new Pose(101, 34, Math.toRadians(0));
+    private final Pose pickupScore1_3 = new Pose(125, 34, Math.toRadians(0));
+    private final Pose pickupPose2_2 = new Pose(125, 10, Math.toRadians(0));
+    private final Pose pickupPose2_1 = new Pose(125, 0, Math.toRadians(0));
     // Hardware
     private DcMotor FR, FL, BR, BL;
     private Follower follower;
@@ -71,18 +70,17 @@ public class AutoFarBlue extends OpMode {
 
     // State
     private int pathState;
-    private int target = 0;
+    private int target = 1;
     private int possibleGreenPos = -1;
     private double shoots = 0;
 
     private double targetAngle, targetPosition, distance;
-    private double visionOffset;
     private double x, y;
     private Pose botPose;
     private double error;
     private double targetVelocity = DEFAULT_TARGET_VELOCITY;
 
-    private PathChain scorePreload, grabFirst, grabHuman, park;
+    private PathChain scorePreload, grabFirst, grabHuman,grabHuman2, park;
 
     public void buildPaths() {
         scorePreload = follower.pathBuilder()
@@ -102,7 +100,7 @@ public class AutoFarBlue extends OpMode {
                 .addPath(new BezierLine(pickupScore1_3, scorePose))
                 .setLinearHeadingInterpolation(pickupScore1_3.getHeading(), scorePose.getHeading())
                 .addParametricCallback(0.1, this::startPresiune)
-                .addParametricCallback(0.3, () -> motors.intakeReverse())
+                .addParametricCallback(0.35, () -> motors.intakeReverse())
                 .setGlobalDeceleration(0.4)
                 .build();
 
@@ -115,13 +113,31 @@ public class AutoFarBlue extends OpMode {
                 })
                 .addPath(new BezierLine(pickupPose2_2, scorePose))
                 .setLinearHeadingInterpolation(pickupPose2_2.getHeading(), scorePose.getHeading())
-                .addParametricCallback(0.1, this::startPresiune)
-                .addParametricCallback(0.5, () -> motors.intakeReverse())
-                .addParametricCallback(0.9, () -> {
+                .addParametricCallback(0.1, this::startPresiune2)
+                .addParametricCallback(0.6, () -> motors.intakeReverse())
+                .addParametricCallback(0.95, () -> {
                     motors.intakeOff();
                     PoseStorage.autoPose = follower.getPose();
                 })
-                .setGlobalDeceleration(0.5)
+                .setGlobalDeceleration(0.15)
+                .build();
+
+        grabHuman2 = follower.pathBuilder()
+                .addPath(new BezierLine(scorePose, pickupPose2_1))
+                .setLinearHeadingInterpolation(scorePose.getHeading(), pickupPose2_1.getHeading())
+                .addParametricCallback(0, () -> {
+                    motors.intakeOn();
+                    selectioner.resetServos();
+                })
+                .addPath(new BezierLine(pickupPose2_1, scorePose))
+                .setLinearHeadingInterpolation(pickupPose2_1.getHeading(), scorePose.getHeading())
+                .addParametricCallback(0.1, this::startPresiune2)
+                .addParametricCallback(0.6, () -> motors.intakeReverse())
+                .addParametricCallback(0.95, () -> {
+                    motors.intakeOff();
+                    PoseStorage.autoPose = follower.getPose();
+                })
+                .setGlobalDeceleration(0.15)
                 .build();
 
         park = follower.pathBuilder()
@@ -186,7 +202,7 @@ public class AutoFarBlue extends OpMode {
 
             case 4:
                 if (!follower.isBusy()) {
-                    follower.followPath(grabHuman, true);
+                    follower.followPath(grabHuman2, true);
                     setPathState(5);
                 }
                 break;
@@ -215,7 +231,7 @@ public class AutoFarBlue extends OpMode {
 
             case 8:
                 if (!follower.isBusy()) {
-                    follower.followPath(grabHuman, true);
+                    follower.followPath(grabHuman2, true);
                     setPathState(9);
                 }
                 break;
@@ -386,8 +402,16 @@ public class AutoFarBlue extends OpMode {
         hold(0.25);
         selectioner.resetServos();
         motors.intakeOn();
-        motors.setCoefsMan(12, 0, 0, 3.5, hardwareMap.voltageSensor.iterator().next().getVoltage());
+        motors.setCoefsMan(12, 0, 0, 3.55, hardwareMap.voltageSensor.iterator().next().getVoltage());
         motors.setRampVelocityC((int) targetVelocity);
+    }
+
+    public void startPresiune2() {
+        hold(0.25);
+        selectioner.resetServos();
+        motors.intakeOn();
+        motors.setCoefsMan(12, 0, 0, 3.55, hardwareMap.voltageSensor.iterator().next().getVoltage());
+        motors.setRampVelocityC((int) targetVelocity-60);
     }
 
     public void stopPresiune() {

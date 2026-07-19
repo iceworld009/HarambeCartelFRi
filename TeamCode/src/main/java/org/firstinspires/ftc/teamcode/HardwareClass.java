@@ -16,15 +16,15 @@ public class HardwareClass {
     public Servo angle, selectTop, selectBotR, selectBotL;
     public CRServo rise1, rise2;
     public RevColorSensorV3 colorTop, colorBotR, colorBotL, colorTop2, colorBotR2, colorBotL2; //selection sensors
-    public static double hoodDown = 0 , hoodUp = 0;
-    public static double redX = 6, redY = 136;  // -71 71
-    public static double blueX = 138, blueY = 136; // -71 -71
-    public static double autoBlueScorePoseX=3, autoBlueScorePoseY=143, autoRedScorePoseX=142, autoRedScorePoseY=143, autoArtilleryScorePoseX=72, autoArtilleryScorePoseY=-142;
+    public static double hoodDown = 0.21 , hoodUp = 0.55;
+    public static double redX = 7, redY = 138;  // -71 71
+    public static double blueX = 138, blueY = 138; // -71 -71
+    public static double autoBlueScorePoseX=3, autoBlueScorePoseY=143, autoRedScorePoseX=142, autoRedScorePoseY=143, autoArtilleryScorePoseX=72, autoArtilleryScorePoseY=-144;
     public static double tagPosX = 72, tagPosY = 144;
-    public static double selectTopLOW = 0.91, selectBotLLOW = 0.2,selectBotRLOW =0.91;
-    public static double selectTopHIGH = 0.43, selectBotLHIGH = 0.62,selectBotRHIGH = 0.5;
-    public static int bratDelay = 165; // 135
-    public static int bratBetween = 70; // 65
+    public static double selectTopLOW = 0.91, selectBotLLOW = 0.2,selectBotRLOW =0.165;
+    public static double selectTopHIGH = 0.43, selectBotLHIGH = 0.62,selectBotRHIGH = 0.55;
+    public static int bratDelay = 115; // 165
+    public static int bratBetween = 60; // 70
     public static int turret_min=-715, turret_max=0;
 
 

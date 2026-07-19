@@ -40,9 +40,8 @@ public class Selectioner{
         rightServoUp();
         sleep(HardwareClass.bratBetween);
         leftServoUp();
-        sleep(HardwareClass.bratBetween);
+        sleep(HardwareClass.bratBetween+40);
         topServoUp();
-        sleep(HardwareClass.bratBetween);
     }
 
     public void unloadBallsSlow(){  //Deprecated

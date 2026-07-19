@@ -24,15 +24,15 @@ import org.firstinspires.ftc.teamcode.SubSys.Servos;
 import org.firstinspires.ftc.teamcode.SubSys.Turret;
 import org.firstinspires.ftc.teamcode.PoseStorage;
 
-@Autonomous(name = "Auto Far Red", group = "Test")
-public class AutoFarRed extends OpMode {
+@Autonomous(name = "Auto Far Purple Red", group = "Test")
+public class AutoFarPurpleRed extends OpMode {
 
     private static final int REP = 4500;                    // max poll iterations while ramping flywheel
-    private static final int TELEMETRY_UPDATE_INTERVAL = 25; // only push telemetry every N iterations
+    private static final int TELEMETRY_UPDATE_INTERVAL = 35; // only push telemetry every N iterations
     /** needs adjustment !!!
      *  try to rise and lower the rpm in magnitude of 25 rpm +-
      */
-    private static final double DEFAULT_TARGET_VELOCITY = 3610;  //3900 +-
+    private static final double DEFAULT_TARGET_VELOCITY = 3675;  //3900 +-
 
 
     private static final double PRELOAD_RAMP_THRESHOLD = -60;
@@ -41,17 +41,20 @@ public class AutoFarRed extends OpMode {
     private static final int PIPELINE_PRESEEK = 1;
     private static final int PIPELINE_AIM = -4;
 
-    private static final double AIM_X_OFFSET = -9;
+    private static final double AIM_X_OFFSET = -2;
 
-    private static final int POST_SHOT_SLEEP_MS = 100;
+    private static final int POST_SHOT_SLEEP_MS = 80;
     private static final int TURRET_THREAD_PERIOD_MS = 10;
 
-    private final Pose startPose = new Pose(60.44, 0.4, Math.toRadians(180));
-    private final Pose scorePose = new Pose(57, 17, Math.toRadians(180));
-    private final Pose pickupScore1 = new Pose(43, 34, Math.toRadians(180));
-    private final Pose pickupScore1_3 = new Pose(19, 34, Math.toRadians(180));
-    private final Pose pickupPose2_1 = new Pose(19, -8, Math.toRadians(180));
-    private final Pose pickupPose2_2 = new Pose(19, 2.5, Math.toRadians(180));
+
+
+    private final Pose startPose = new Pose(83.56, 0.4, Math.toRadians(0));
+    private final Pose scorePose = new Pose(87, -17, Math.toRadians(0));
+    private final Pose pickupScore1 = new Pose(101, 34, Math.toRadians(0));
+    private final Pose pickupScore1_3 = new Pose(125, 34, Math.toRadians(0));
+    private final Pose pickupPose2_2 = new Pose(125, 10, Math.toRadians(0));
+    private final Pose pickupPose2_1 = new Pose(125, 0, Math.toRadians(0));
+    private final Pose parkPose = new Pose(22,0,Math.toRadians(0));
 
     // Hardware
     private DcMotor FR, FL, BR, BL;
@@ -123,7 +126,7 @@ public class AutoFarRed extends OpMode {
                     motors.intakeOff();
                     PoseStorage.autoPose = follower.getPose();
                 })
-                .setGlobalDeceleration(0.15)
+                .setGlobalDeceleration(0.5)
                 .build();
 
         grabHuman2 = follower.pathBuilder()
@@ -143,7 +146,7 @@ public class AutoFarRed extends OpMode {
                     motors.intakeOff();
                     PoseStorage.autoPose = follower.getPose();
                 })
-                .setGlobalDeceleration(0.15)
+                .setGlobalDeceleration(0.5)
                 .build();
 
         park = follower.pathBuilder()
@@ -408,7 +411,7 @@ public class AutoFarRed extends OpMode {
         hold(0.25);
         selectioner.resetServos();
         motors.intakeOn();
-        motors.setCoefsMan(10, 0, 0, 3.55, hardwareMap.voltageSensor.iterator().next().getVoltage());
+        motors.setCoefsMan(12, 0, 0, 3.5, hardwareMap.voltageSensor.iterator().next().getVoltage());
         motors.setRampVelocityC((int) targetVelocity);
     }
 
@@ -416,7 +419,7 @@ public class AutoFarRed extends OpMode {
         hold(0.25);
         selectioner.resetServos();
         motors.intakeOn();
-        motors.setCoefsMan(10, 0, 0, 3.55, hardwareMap.voltageSensor.iterator().next().getVoltage());
+        motors.setCoefsMan(12, 0, 0, 3.5, hardwareMap.voltageSensor.iterator().next().getVoltage());
         motors.setRampVelocityC((int) targetVelocity-60);
     }
 
@@ -438,8 +441,8 @@ public class AutoFarRed extends OpMode {
     /** Odometry-driven turret aim */
     private void updateTurret() {
         limelight.setPipeline(PIPELINE_AIM);
-        double dx = HardwareClass.autoRedScorePoseX - x + AIM_X_OFFSET;
-        double dy = HardwareClass.autoRedScorePoseY - y;
+        double dx = HardwareClass.autoArtilleryScorePoseX - x + AIM_X_OFFSET;
+        double dy = HardwareClass.autoArtilleryScorePoseY - y;
 
         double goalAngle = Math.atan2(dy, dx);
         double thetaR = botPose.getHeading();
